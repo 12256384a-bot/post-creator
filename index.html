@@ -334,6 +334,7 @@
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
+        mode: 'cors',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': apiKey,
@@ -360,7 +361,8 @@
       setStatus('生成完了！', 'success');
 
     } catch (e) {
-      setStatus(`エラー: ${e.message}`, 'error');
+      setStatus(`エラー: ${e.name} - ${e.message}`, 'error');
+      console.error(e);
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'AIでポストを生成';
