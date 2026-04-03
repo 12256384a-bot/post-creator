@@ -315,6 +315,8 @@
       document.getElementById('settings-panel').style.display = 'block';
       return;
     }
+    setStatus(`APIキー確認: ${apiKey.substring(0, 15)}... (${apiKey.length}文字)`, '');
+    await new Promise(r => setTimeout(r, 1000));
 
     const theme = document.getElementById('theme').value;
     const memo = document.getElementById('memo').value.trim();
