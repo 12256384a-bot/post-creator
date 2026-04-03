@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ポスト作成 - まりも</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e7e9ea;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    /* パスワード画面 */
+    #lock-screen {
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+    }
+    #lock-screen h1 { font-size: 1.4rem; margin-bottom: 24px; color: #1d9bf0; }
+    #lock-screen input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #333;
+      background: #1e2732;
+      color: #e7e9ea;
+      font-size: 1rem;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    #lock-screen button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      background: #1d9bf0;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #lock-error { color: #f4212e; margin-top: 10px; font-size: 0.9rem; }
+
+    /* メイン画面 */
+    #app {
+      display: none;
+      width: 100%;
+      max-width: 480px;
+    }
+    h2 { font-size: 1.2rem; margin-bottom: 16px; color: #1d9bf0; text-align: center; }
+
+    .section { margin-bottom: 16px; }
+    label { font-size: 0.85rem; color: #71767b; display: block; margin-bottom: 6px; }
+
+    select, textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #333;
+      background: #1e2732;
+      color: #e7e9ea;
+      font-size: 0.95rem;
+    }
+    select { height: 48px; }
+    textarea { min-height: 160px; resize: vertical; line-height: 1.6; }
+
+    .char-count {
+      text-align: right;
+      font-size: 0.8rem;
+      margin-top: 4px;
+      color: #71767b;
+    }
+    .char-count.over { color: #f4212e; }
+
+    .btn-generate {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      background: #1d9bf0;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .btn-generate:disabled { background: #333; color: #71767b; cursor: not-allowed; }
+
+    .btn-copy {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #1d9bf0;
+      background: transparent;
+      color: #1d9bf0;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .btn-copy:disabled { border-color: #333; color: #71767b; cursor: not-allowed; }
+
+    .btn-regenerate {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #333;
+      background: transparent;
+      color: #71767b;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    #status { text-align: center; font-size: 0.85rem; color: #71767b; margin-top: 8px; min-height: 20px; }
+    #status.error { color: #f4212e; }
+    #status.success { color: #00ba7c; }
+
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 設定 */
+    .settings-toggle {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #71767b;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    #settings-panel {
+      display: none;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid #333;
+      border-radius: 12px;
+    }
+    #settings-panel input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: #0f1117;
+      color: #e7e9ea;
+      font-size: 0.85rem;
+      font-family: monospace;
+      margin-top: 6px;
+    }
+    .btn-save-key {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: #333;
+      color: #e7e9ea;
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- パスワード画面 -->
+<div id="lock-screen">
+  <h1>🔒 ポスト作成</h1>
+  <input type="password" id="password-input" placeholder="パスワードを入力" />
+  <button onclick="unlock()">ログイン</button>
+  <div id="lock-error"></div>
+</div>
+
+<!-- メイン画面 -->
+<div id="app">
+  <h2>✍️ ポスト作成</h2>
+
+  <div class="section">
+    <label>テーマ（任意）</label>
+    <select id="theme">
+      <option value="">ランダム生成</option>
+      <option value="共感">共感系（あるある）</option>
+      <option value="失敗談">失敗談・ストーリー</option>
+      <option value="グダ消し">グダ消し（不安を消す）</option>
+      <option value="行動喚起">行動喚起（今やれ）</option>
+      <option value="問題提起">問題提起（なぜ稼げないか）</option>
+      <option value="解決策">解決策（AI副業の方法）</option>
+      <option value="ユーモア">ユーモア・興奮系</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <label>メモ・キーワード（任意）</label>
+    <textarea id="memo" placeholder="例：子供の習い事、月5万、コピペ..." rows="3"></textarea>
+  </div>
+
+  <button class="btn-generate" id="btn-generate" onclick="generate()">
+    AIでポストを生成
+  </button>
+
+  <div class="section">
+    <label>生成されたポスト</label>
+    <textarea id="output" placeholder="ここに生成されます..." oninput="updateCount()"></textarea>
+    <div class="char-count" id="char-count">0 / 140</div>
+  </div>
+
+  <button class="btn-copy" id="btn-copy" onclick="copyText()" disabled>コピー</button>
+  <button class="btn-regenerate" onclick="generate()">もう一度生成</button>
+
+  <div id="status"></div>
+
+  <div class="settings-toggle" onclick="toggleSettings()">⚙️ API設定</div>
+  <div id="settings-panel">
+    <label>Anthropic API Key</label>
+    <input type="password" id="api-key-input" placeholder="sk-ant-..." />
+    <button class="btn-save-key" onclick="saveApiKey()">保存</button>
+  </div>
+</div>
+
+<script>
+  const PASSWORD = "marimo2026";
+
+  const SYSTEM_PROMPT = `あなたはXのポスト作成の専門家です。以下のキャラクター設定に従ってポストを生成してください。
+
+【キャラクター】
+- 名前: まりも
+- 年齢・職業: 35歳・会社員（営業）
+- 家族: 妻と子供2人、住宅ローンあり、手取り20万
+- ストーリー: 3年間副業で0円 → AIで月5万〜10万の安定収益化
+- コンセプト: 知識・実績・商品ゼロからAIとコピペで月5万〜24万稼ぐ方法
+
+【絶対に守るべきルール】
+✅ 140文字以内（厳守）
+✅ 具体的な数字を1個以上含める（月◯万、時給◯円など）
+✅ 体験談か失敗談を含める
+✅ グダ（不安）を1つ消す
+❌ ハッシュタグは絶対に入れない
+❌ 詐欺的・誇張した表現はNG
+❌ ノウハウだけ・抽象的な表現はNG
+
+【出力】
+投稿文のみ。説明・ラベル・文字数などは一切付けない。`;
+
+  function unlock() {
+    const input = document.getElementById('password-input').value;
+    if (input === PASSWORD) {
+      document.getElementById('lock-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      // 保存済みAPIキーを読み込む
+      const saved = localStorage.getItem('anthropic_api_key');
+      if (saved) document.getElementById('api-key-input').value = saved;
+    } else {
+      document.getElementById('lock-error').textContent = 'パスワードが違います';
+    }
+  }
+
+  document.getElementById('password-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') unlock();
+  });
+
+  function getApiKey() {
+    return localStorage.getItem('anthropic_api_key') || '';
+  }
+
+  function saveApiKey() {
+    const key = document.getElementById('api-key-input').value.trim();
+    localStorage.setItem('anthropic_api_key', key);
+    setStatus('APIキーを保存しました', 'success');
+  }
+
+  function toggleSettings() {
+    const panel = document.getElementById('settings-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function updateCount() {
+    const text = document.getElementById('output').value;
+    const count = text.length;
+    const el = document.getElementById('char-count');
+    el.textContent = `${count} / 140`;
+    el.className = count > 140 ? 'char-count over' : 'char-count';
+    document.getElementById('btn-copy').disabled = count === 0;
+  }
+
+  function copyText() {
+    const text = document.getElementById('output').value;
+    navigator.clipboard.writeText(text).then(() => {
+      setStatus('コピーしました！Xアプリに貼り付けてください', 'success');
+    });
+  }
+
+  function setStatus(msg, type = '') {
+    const el = document.getElementById('status');
+    el.innerHTML = msg;
+    el.className = type;
+  }
+
+  async function generate() {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      setStatus('⚙️ API設定からAPIキーを入力してください', 'error');
+      document.getElementById('settings-panel').style.display = 'block';
+      return;
+    }
+
+    const theme = document.getElementById('theme').value;
+    const memo = document.getElementById('memo').value.trim();
+    const btn = document.getElementById('btn-generate');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>生成中...';
+    setStatus('');
+    document.getElementById('output').value = '';
+    document.getElementById('btn-copy').disabled = true;
+    updateCount();
+
+    let userPrompt = 'Xのポストを1件生成してください。';
+    if (theme) userPrompt += `\nテーマ: ${theme}系のポストにしてください。`;
+    if (memo) userPrompt += `\nキーワード・メモ: ${memo}`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-calls': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5',
+          max_tokens: 256,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: userPrompt }]
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      const text = data.content[0].text.trim();
+      document.getElementById('output').value = text;
+      updateCount();
+      setStatus('生成完了！', 'success');
+
+    } catch (e) {
+      setStatus(`エラー: ${e.message}`, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'AIでポストを生成';
+    }
+  }
+</script>
+</body>
+</html>
