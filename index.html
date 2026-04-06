@@ -422,8 +422,8 @@ async function generate() {
   const memo = document.getElementById('memo').value.trim();
   const btn = document.getElementById('btn-generate');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>生成中...';
-  setPostStatus(''); document.getElementById('output').value = '';
-  document.getElementById('btn-copy').disabled = true; updateCount();
+  setPostStatus('');
+  document.getElementById('post-list').innerHTML = '';
 
   let userPrompt = 'Xのポストを10件生成してください。各投稿を「---」で区切って出力してください。';
   if (theme) userPrompt += `\nテーマ: ${theme}系のポストにしてください。`;
