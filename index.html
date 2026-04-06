@@ -161,6 +161,21 @@
     .toast.show { opacity: 1; }
     .pb80 { height: 80px; }
 
+    /* ポスト一覧 */
+    .post-card {
+      background: #1a1a1a; border: 1px solid #222; border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 10px;
+    }
+    .post-card-text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; color: #e7e9ea; }
+    .post-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+    .post-card-len { font-size: 11px; }
+    .post-card-len.over { color: #f4212e; }
+    .post-card-len.ok { color: #555; }
+    .btn-copy-post {
+      padding: 4px 12px; border-radius: 12px; border: 1px solid #333;
+      background: transparent; color: #888; font-size: 12px; cursor: pointer;
+    }
+
     /* コメント作成 */
     #comment-status { text-align: center; font-size: 0.85rem; color: #71767b; margin: 8px 0; min-height: 20px; }
     #comment-status.error { color: #f4212e; }
@@ -223,13 +238,8 @@
       <textarea id="memo" placeholder="例：子供の習い事、月5万、コピペ..." rows="3"></textarea>
     </div>
     <button class="btn-primary" id="btn-generate" onclick="generate()">AIでポストを生成</button>
-    <div class="section">
-      <label>生成されたポスト</label>
-      <textarea id="output" placeholder="ここに生成されます..." oninput="updateCount()"></textarea>
-      <div class="char-count" id="char-count">0 / 140</div>
-    </div>
-    <button class="btn-outline" id="btn-copy" onclick="copyText()" disabled>コピー</button>
-    <button class="btn-sub" onclick="generate()">もう一度生成</button>
+    <div id="post-list"></div>
+    <button class="btn-sub" onclick="generate()" style="margin-top:8px;">もう一度生成</button>
     <div id="post-status"></div>
     <div class="settings-toggle" onclick="toggleSettings()">⚙️ API設定</div>
     <div id="settings-panel">
@@ -340,6 +350,27 @@ function switchNav(tab) {
 }
 
 // ---- ポスト作成 ----
+function renderPosts(posts) {
+  const list = document.getElementById('post-list');
+  if (!posts.length) { list.innerHTML = ''; return; }
+  list.innerHTML = posts.map((p, i) => {
+    const over = p.length > 140;
+    return `
+      <div class="post-card">
+        <div class="post-card-text">${esc(p)}</div>
+        <div class="post-card-footer">
+          <span class="post-card-len ${over ? 'over' : 'ok'}">${p.length} / 140${over ? ' ⚠️' : ''}</span>
+          <button class="btn-copy-post" onclick="copyPost(${i})">コピー</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+let _posts = [];
+function copyPost(i) {
+  navigator.clipboard.writeText(_posts[i]).then(() => showToast('コピーしました！'));
+}
+
 function getApiKey() { return localStorage.getItem('anthropic_api_key') || ''; }
 function saveApiKey() {
   localStorage.setItem('anthropic_api_key', document.getElementById('api-key-input').value.trim());
@@ -348,18 +379,6 @@ function saveApiKey() {
 function toggleSettings() {
   const p = document.getElementById('settings-panel');
   p.style.display = p.style.display === 'none' ? 'block' : 'none';
-}
-function updateCount() {
-  const text = document.getElementById('output').value;
-  const el = document.getElementById('char-count');
-  el.textContent = `${text.length} / 140`;
-  el.className = text.length > 140 ? 'char-count over' : 'char-count';
-  document.getElementById('btn-copy').disabled = text.length === 0;
-}
-function copyText() {
-  navigator.clipboard.writeText(document.getElementById('output').value).then(() => {
-    setPostStatus('コピーしました！', 'success');
-  });
 }
 function setPostStatus(msg, type = '') {
   const el = document.getElementById('post-status');
@@ -373,7 +392,7 @@ async function generate() {
   setPostStatus(''); document.getElementById('output').value = '';
   document.getElementById('btn-copy').disabled = true; updateCount();
 
-  let userPrompt = 'Threadsのポストを1件生成してください。';
+  let userPrompt = 'Xのポストを10件生成してください。各投稿を「---」で区切って出力してください。';
   if (theme) userPrompt += `\nテーマ: ${theme}系のポストにしてください。`;
   if (memo) userPrompt += `\nキーワード・メモ: ${memo}`;
 
@@ -385,9 +404,10 @@ async function generate() {
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userPrompt }]
     });
-    const text = message.content[0].text.trim();
-    document.getElementById('output').value = text;
-    updateCount(); setPostStatus('生成完了！', 'success');
+    const raw = message.content[0].text.trim();
+    _posts = raw.split('---').map(p => p.trim()).filter(Boolean);
+    renderPosts(_posts);
+    setPostStatus(`${_posts.length}件生成完了！`, 'success');
   } catch (e) {
     setPostStatus(`エラー: ${e.message}`, 'error');
   } finally {
