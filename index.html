@@ -213,8 +213,9 @@
 <div id="app">
   <div class="nav-tabs">
     <div class="nav-tab active" onclick="switchNav('post')">✍️ ポスト作成</div>
-    <div class="nav-tab" onclick="switchNav('comment')">💬 コメント作成</div>
-    <div class="nav-tab" onclick="switchNav('approve')">✅ 投稿承認</div>
+    <div class="nav-tab" onclick="switchNav('comment')">💬 コメント</div>
+    <div class="nav-tab" onclick="switchNav('reply')">↩️ 返信</div>
+    <div class="nav-tab" onclick="switchNav('approve')">✅ 承認</div>
   </div>
 
   <!-- ポスト作成 -->
@@ -259,6 +260,22 @@
     <button class="btn-primary" id="btn-comment" onclick="generateComments()">コメントを生成</button>
     <div id="comment-status"></div>
     <div id="comment-results"></div>
+  </div>
+
+  <!-- 返信作成 -->
+  <div id="tab-reply" style="display:none;">
+    <h2>↩️ 返信作成</h2>
+    <div class="section">
+      <label>元のポスト</label>
+      <textarea id="original-post" placeholder="自分の投稿文をここに貼り付けてください..." rows="4"></textarea>
+    </div>
+    <div class="section">
+      <label>届いたコメント</label>
+      <textarea id="received-comment" placeholder="返信したいコメントをここに貼り付けてください..." rows="3"></textarea>
+    </div>
+    <button class="btn-primary" id="btn-reply" onclick="generateReplies()">返信を生成</button>
+    <div id="reply-status"></div>
+    <div id="reply-results"></div>
   </div>
 
   <!-- 投稿承認 -->
@@ -342,9 +359,10 @@ document.getElementById('password-input').addEventListener('keydown', e => { if 
 
 // ---- タブ切替 ----
 function switchNav(tab) {
-  document.querySelectorAll('.nav-tab').forEach((t, i) => t.classList.toggle('active', ['post','comment','approve'][i] === tab));
+  document.querySelectorAll('.nav-tab').forEach((t, i) => t.classList.toggle('active', ['post','comment','reply','approve'][i] === tab));
   document.getElementById('tab-post').style.display = tab === 'post' ? 'block' : 'none';
   document.getElementById('tab-comment').style.display = tab === 'comment' ? 'block' : 'none';
+  document.getElementById('tab-reply').style.display = tab === 'reply' ? 'block' : 'none';
   document.getElementById('tab-approve').style.display = tab === 'approve' ? 'block' : 'none';
   if (tab === 'approve' && localStorage.getItem('gh_token') && drafts.length === 0) loadDrafts();
 }
@@ -538,6 +556,85 @@ function commentCard(text, type, idx) {
 function copyComment(idx) {
   const el = document.getElementById(`ctext-${idx}`);
   navigator.clipboard.writeText(el.textContent.trim()).then(() => showToast('コピーしました！'));
+}
+
+// ---- 返信作成 ----
+async function generateReplies() {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    document.getElementById('reply-status').textContent = '⚙️ API設定からAPIキーを入力してください';
+    document.getElementById('reply-status').className = 'error';
+    return;
+  }
+  const originalPost = document.getElementById('original-post').value.trim();
+  const receivedComment = document.getElementById('received-comment').value.trim();
+  if (!receivedComment) {
+    document.getElementById('reply-status').textContent = 'コメントを入力してください';
+    document.getElementById('reply-status').className = 'error';
+    return;
+  }
+  const btn = document.getElementById('btn-reply');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>生成中...';
+  document.getElementById('reply-status').textContent = '';
+  document.getElementById('reply-results').innerHTML = '';
+
+  const prompt = `まりも（35歳・会社員営業・副業でAI活用・一人称は俺）として、届いたコメントへの返信を10件生成してください。
+
+【元のポスト】
+${originalPost || '（なし）'}
+
+【届いたコメント】
+${receivedComment}
+
+【返信のルール】
+- 一人称は「俺」
+- コメントの内容に具体的に触れる
+- 自分の体験・意見を自然に添える
+- 30〜60文字が理想。短めでテンポよく
+- 質問は入れない
+- 相手への敬意を持った自然なトーン
+- 同じような返信にならないようバリエーションを出す
+
+【出力形式】
+以下の形式で出力してください：
+
+HUMOR
+（ユーモアあり5件を「---」で区切る）
+
+SERIOUS
+（ユーモアなし5件を「---」で区切る）`;
+
+  try {
+    const { default: Anthropic } = await import('https://esm.sh/@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+    const message = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001', max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const raw = message.content[0].text.trim();
+    const humorMatch = raw.match(/HUMOR\s*([\s\S]*?)(?=SERIOUS|$)/);
+    const seriousMatch = raw.match(/SERIOUS\s*([\s\S]*?)$/);
+    const humorItems = humorMatch ? humorMatch[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
+    const seriousItems = seriousMatch ? seriousMatch[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
+
+    let html = '';
+    if (humorItems.length) {
+      html += '<div class="comment-section-title">😄 ユーモアあり</div>';
+      html += humorItems.map((c, i) => commentCard(c, 'humor', 'r' + i)).join('');
+    }
+    if (seriousItems.length) {
+      html += '<div class="comment-section-title">💬 ユーモアなし</div>';
+      html += seriousItems.map((c, i) => commentCard(c, 'serious', 'r' + (i + 10))).join('');
+    }
+    document.getElementById('reply-results').innerHTML = html;
+    document.getElementById('reply-status').textContent = '生成完了！';
+    document.getElementById('reply-status').className = 'success';
+  } catch (e) {
+    document.getElementById('reply-status').textContent = `エラー: ${e.message}`;
+    document.getElementById('reply-status').className = 'error';
+  } finally {
+    btn.disabled = false; btn.innerHTML = '返信を生成';
+  }
 }
 
 // ---- 投稿承認 ----
