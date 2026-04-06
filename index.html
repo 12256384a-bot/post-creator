@@ -543,19 +543,50 @@ SERIOUS
 }
 
 function commentCard(text, type, idx) {
+  return editableCommentCard(text, type, idx);
+}
+
+function editableCommentCard(text, type, idx) {
   return `
     <div class="comment-card ${type}">
       <div class="comment-text" id="ctext-${idx}">${esc(text)}</div>
+      <textarea class="draft-edit" id="cedit-${idx}" style="display:none">${esc(text)}</textarea>
       <div class="comment-footer">
-        <span class="comment-len">${text.length}文字</span>
-        <button class="btn-copy-comment" onclick="copyComment(${idx})">コピー</button>
+        <span class="comment-len" id="clen-${idx}">${text.length}文字</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-copy-comment" id="cebtn-${idx}" onclick="toggleCommentEdit('${idx}')">編集</button>
+          <button class="btn-copy-comment" onclick="copyComment('${idx}')">コピー</button>
+        </div>
       </div>
     </div>`;
 }
 
+function toggleCommentEdit(idx) {
+  const textEl = document.getElementById(`ctext-${idx}`);
+  const editEl = document.getElementById(`cedit-${idx}`);
+  const btnEl = document.getElementById(`cebtn-${idx}`);
+  const lenEl = document.getElementById(`clen-${idx}`);
+  const isEditing = editEl.style.display === 'block';
+  if (isEditing) {
+    const newText = editEl.value.trim();
+    textEl.innerHTML = esc(newText);
+    lenEl.textContent = `${newText.length}文字`;
+    editEl.style.display = 'none';
+    textEl.style.display = 'block';
+    btnEl.textContent = '編集';
+  } else {
+    editEl.style.display = 'block';
+    textEl.style.display = 'none';
+    btnEl.textContent = '保存';
+    editEl.oninput = () => { lenEl.textContent = `${editEl.value.length}文字`; };
+  }
+}
+
 function copyComment(idx) {
-  const el = document.getElementById(`ctext-${idx}`);
-  navigator.clipboard.writeText(el.textContent.trim()).then(() => showToast('コピーしました！'));
+  const editEl = document.getElementById(`cedit-${idx}`);
+  const textEl = document.getElementById(`ctext-${idx}`);
+  const text = editEl.style.display === 'block' ? editEl.value.trim() : textEl.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => showToast('コピーしました！'));
 }
 
 // ---- 返信作成 ----
@@ -620,11 +651,11 @@ SERIOUS
     let html = '';
     if (humorItems.length) {
       html += '<div class="comment-section-title">😄 ユーモアあり</div>';
-      html += humorItems.map((c, i) => commentCard(c, 'humor', 'r' + i)).join('');
+      html += humorItems.map((c, i) => editableCommentCard(c, 'humor', 'r' + i)).join('');
     }
     if (seriousItems.length) {
       html += '<div class="comment-section-title">💬 ユーモアなし</div>';
-      html += seriousItems.map((c, i) => commentCard(c, 'serious', 'r' + (i + 10))).join('');
+      html += seriousItems.map((c, i) => editableCommentCard(c, 'serious', 'r' + (i + 10))).join('');
     }
     document.getElementById('reply-results').innerHTML = html;
     document.getElementById('reply-status').textContent = '生成完了！';
