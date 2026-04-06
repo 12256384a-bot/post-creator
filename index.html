@@ -383,7 +383,8 @@ async function loadDrafts() {
     });
     const data = await res.json();
     sha = data.sha;
-    drafts = JSON.parse(atob(data.content.replace(/\n/g, '')));
+    const decoded = new TextDecoder('utf-8').decode(Uint8Array.from(atob(data.content.replace(/\n/g, '')), c => c.charCodeAt(0)));
+    drafts = JSON.parse(decoded);
     renderDrafts(); updateStats();
   } catch (e) {
     document.getElementById('draft-list').innerHTML = '<div class="loading-msg">読み込みに失敗しました</div>';
