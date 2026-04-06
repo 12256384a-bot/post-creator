@@ -384,7 +384,9 @@ async function generate() {
       body: JSON.stringify({ contents: [{ parts: [{ text: userPrompt }] }] })
     });
     const data = await res.json();
-    const text = data.candidates[0].content.parts[0].text.trim();
+    if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!text) throw new Error('レスポンスが空です: ' + JSON.stringify(data));
     document.getElementById('output').value = text;
     updateCount(); setPostStatus('生成完了！', 'success');
   } catch (e) {
@@ -437,7 +439,9 @@ SERIOUS
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
     });
     const data = await res.json();
-    const raw = data.candidates[0].content.parts[0].text.trim();
+    if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!raw) throw new Error('レスポンスが空です: ' + JSON.stringify(data));
     const humorMatch = raw.match(/HUMOR\s*([\s\S]*?)(?=SERIOUS|$)/);
     const seriousMatch = raw.match(/SERIOUS\s*([\s\S]*?)$/);
 
