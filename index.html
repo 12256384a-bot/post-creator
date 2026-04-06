@@ -418,6 +418,12 @@ function setPostStatus(msg, type = '') {
   el.innerHTML = msg; el.className = type;
 }
 async function generate() {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    setPostStatus('⚙️ API設定からAPIキーを入力してください', 'error');
+    document.getElementById('settings-panel').style.display = 'block';
+    return;
+  }
   const theme = document.getElementById('theme').value;
   const memo = document.getElementById('memo').value.trim();
   const btn = document.getElementById('btn-generate');
