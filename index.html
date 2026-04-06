@@ -231,7 +231,7 @@
     <button class="btn-outline" id="btn-copy" onclick="copyText()" disabled>コピー</button>
     <button class="btn-sub" onclick="generate()">もう一度生成</button>
     <div id="post-status"></div>
-    <div class="settings-toggle" onclick="toggleSettings()">⚙️ API設定</div>
+    <div class="settings-toggle" onclick="toggleSettings()">⚙️ Anthropic API設定（自動投稿用・任意）</div>
     <div id="settings-panel">
       <label>Anthropic API Key</label>
       <input type="password" id="api-key-input" placeholder="sk-ant-..." />
@@ -287,6 +287,9 @@ const PASSWORD = "marimo2026";
 const OWNER = "12256384a-bot";
 const REPO = "threads-auto-post";
 const FILE_PATH = "drafts.json";
+
+const GEMINI_API_KEY = "AIzaSyDCXyDPVj2s1q1-PudtEQGIrJafctsAMzk";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 const SYSTEM_PROMPT = `あなたはThreadsのポスト作成の専門家です。以下のキャラクター設定に従ってポストを生成してください。
 
@@ -363,12 +366,6 @@ function setPostStatus(msg, type = '') {
   el.innerHTML = msg; el.className = type;
 }
 async function generate() {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    setPostStatus('⚙️ API設定からAPIキーを入力してください', 'error');
-    document.getElementById('settings-panel').style.display = 'block';
-    return;
-  }
   const theme = document.getElementById('theme').value;
   const memo = document.getElementById('memo').value.trim();
   const btn = document.getElementById('btn-generate');
@@ -376,19 +373,18 @@ async function generate() {
   setPostStatus(''); document.getElementById('output').value = '';
   document.getElementById('btn-copy').disabled = true; updateCount();
 
-  let userPrompt = 'Threadsのポストを1件生成してください。';
+  let userPrompt = SYSTEM_PROMPT + '\n\nThreadsのポストを1件生成してください。';
   if (theme) userPrompt += `\nテーマ: ${theme}系のポストにしてください。`;
   if (memo) userPrompt += `\nキーワード・メモ: ${memo}`;
 
   try {
-    const { default: Anthropic } = await import('https://esm.sh/@anthropic-ai/sdk');
-    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001', max_tokens: 512,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userPrompt }]
+    const res = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: userPrompt }] }] })
     });
-    const text = message.content[0].text.trim();
+    const data = await res.json();
+    const text = data.candidates[0].content.parts[0].text.trim();
     document.getElementById('output').value = text;
     updateCount(); setPostStatus('生成完了！', 'success');
   } catch (e) {
@@ -400,12 +396,6 @@ async function generate() {
 
 // ---- コメント作成 ----
 async function generateComments() {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    document.getElementById('comment-status').textContent = '⚙️ ポスト作成タブのAPI設定からAPIキーを入力してください';
-    document.getElementById('comment-status').className = 'error';
-    return;
-  }
   const targetPost = document.getElementById('target-post').value.trim();
   if (!targetPost) {
     document.getElementById('comment-status').textContent = '投稿文を入力してください';
@@ -441,14 +431,13 @@ SERIOUS
 （ユーモアなし3件を「---」で区切る）`;
 
   try {
-    const { default: Anthropic } = await import('https://esm.sh/@anthropic-ai/sdk');
-    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001', max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }]
+    const res = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
     });
-
-    const raw = message.content[0].text.trim();
+    const data = await res.json();
+    const raw = data.candidates[0].content.parts[0].text.trim();
     const humorMatch = raw.match(/HUMOR\s*([\s\S]*?)(?=SERIOUS|$)/);
     const seriousMatch = raw.match(/SERIOUS\s*([\s\S]*?)$/);
 
