@@ -499,19 +499,27 @@ async function generateComments() {
   document.getElementById('comment-status').textContent = '';
   document.getElementById('comment-results').innerHTML = '';
 
-  const prompt = `以下のXの投稿に対するコメントを6件生成してください。
+  const prompt = `以下のXの投稿に対するコメントを10件生成してください。
 
 【対象投稿】
 ${targetPost}
 
 【コメント作成のルール】
-- まりも（35歳・会社員・副業でAI活用）として自然にコメントする
-- 一人称は「俺」
-- 相手の投稿内容に具体的に触れる（「いいですね」だけはNG）
+- 一人称は「僕」または「自分」で統一（「俺」は使わない）
+- 営業の話は一切入れない
+- 相手の投稿内容に具体的に触れる（「いいですね」だけはNG・「勉強になります」などの定型文もNG）
 - 自分の体験・意見を一言添える
-- 40〜80文字が理想。長すぎない
-- 質問は入れない
-- 相手への敬意を忘れない自然なトーン
+- 1〜2文で簡潔に。40〜80文字が理想
+- 攻撃的・皮肉・ネガティブな表現は禁止
+- 相手への敬意を忘れない自然で感じの良いトーン
+
+【ユーモアありの条件】
+- 軽くクスッとする程度のユーモア（やりすぎない）
+- 自然で違和感のない日本語
+
+【ユーモアなしの条件】
+- 自然で感じの良いコメント
+- 共感・ポジティブさを含める
 
 【出力形式】
 以下の形式で出力してください：
@@ -623,7 +631,7 @@ async function generateReplies() {
   document.getElementById('reply-status').textContent = '';
   document.getElementById('reply-results').innerHTML = '';
 
-  const prompt = `まりも（35歳・会社員営業・副業でAI活用・一人称は俺）として、届いたコメントへの返信を10件生成してください。
+  const prompt = `届いたコメントへの返信を10件生成してください。
 
 【元のポスト】
 ${originalPost || '（なし）'}
@@ -632,13 +640,18 @@ ${originalPost || '（なし）'}
 ${receivedComment}
 
 【返信のルール】
-- 一人称は「俺」
-- コメントの内容に具体的に触れる
-- 自分の体験・意見を自然に添える
-- 30〜60文字が理想。短めでテンポよく
-- 質問は入れない
-- 相手への敬意を持った自然なトーン
+- 一人称は「僕」または「自分」で統一（「俺」は使わない）
+- 営業の話は一切入れない
+- コメントの内容にしっかり触れる
+- 元ポストの内容も自然に踏まえる
+- 感謝・共感・ポジティブさを含める
+- 1〜2文で簡潔に。30〜60文字が理想
+- 攻撃的・皮肉・ネガティブ表現は禁止
+- カジュアルで自然な日本語
 - 同じような返信にならないようバリエーションを出す
+
+【ユーモアありの条件】
+- 軽くクスッとする程度（やりすぎない）
 
 【出力形式】
 以下の形式で出力してください：
@@ -701,41 +714,63 @@ async function generateQuotes() {
   document.getElementById('quote-status').textContent = '';
   document.getElementById('quote-results').innerHTML = '';
 
-  const prompt = `まりも（35歳・会社員営業・副業でAI活用・一人称は俺）として、以下のポストへの引用リプ文を5件生成してください。
+  const prompt = `以下のポストへの引用リポスト文を9件生成してください。
 
 【引用するポスト】
 ${quotePost}
 
-【引用リプで重要なこと】
-- 相手のポストを「引用」して自分の意見・体験・価値観を加える
-- 単なる同意（「わかります」「その通りです」）だけで終わらない
-- 自分の体験談・具体例を一言添えることで信頼感を出す
+【引用リポストで重要なこと】
+- 一人称は「僕」または「自分」で統一（「俺」は使わない）
+- 営業の話は一切入れない
+- 相手のポストを引用して自分の意見・体験・価値観を加える
+- 「勉強になります」「フォローしました」などの定型文はNG
+- 「共感します」「実践します」だけの具体性のない感想もNG
 - 相手の主張を否定せず、自分の視点でさらに深掘りする
-- フォロワーが「なるほど」「この人おもしろい」と感じる内容にする
-- 140文字以内（厳守）
+- 元の投稿者への敬意を忘れない
+- 100〜130文字程度
 - ハッシュタグは入れない
-- 「俺も〜」「俺の場合〜」など自分事として語る
-- 相手を立てつつ、自分のキャラクターも出す
+- 押し付けがましくなく、フォロワーが見ても「有益」または「心が動く」内容にする
+
+【以下の3パターンを3件ずつ作成】
+パターン1【経験・具体化型】：自分の失敗談や経験を交え「〇〇な人ほどやりがち」と具体化する。または「3日前の自分に刺さる」など過去や未来の自分と対比させる。
+パターン2【深掘り・別視点型】：投稿の価値をさらに引き出す深掘りをする。または投稿者の言語化を称賛しつつ「自分は△△と表現していた」と別角度の視点を添える。
+パターン3【価値言語化・エモ型】：「この一文で救われる人が多いと思う」と意義を言語化する。または実際にやってみた結果や具体的な宣言をストーリー仕立てにする。
 
 【出力形式】
-5件を「---」で区切って出力。ラベルや説明は一切付けない。`;
+以下の形式で出力してください：
+
+PATTERN1
+（パターン1を3件「---」で区切る）
+
+PATTERN2
+（パターン2を3件「---」で区切る）
+
+PATTERN3
+（パターン3を3件「---」で区切る）`;
 
   try {
     const { default: Anthropic } = await import('https://esm.sh/@anthropic-ai/sdk');
     const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
     const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001', max_tokens: 1024,
+      model: 'claude-haiku-4-5-20251001', max_tokens: 2048,
       messages: [{ role: 'user', content: prompt }]
     });
     const raw = message.content[0].text.trim();
-    const items = raw.split('---').map(s => s.trim()).filter(Boolean).slice(0, 5);
+    const p1Match = raw.match(/PATTERN1\s*([\s\S]*?)(?=PATTERN2|$)/);
+    const p2Match = raw.match(/PATTERN2\s*([\s\S]*?)(?=PATTERN3|$)/);
+    const p3Match = raw.match(/PATTERN3\s*([\s\S]*?)$/);
+    const p1 = p1Match ? p1Match[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
+    const p2 = p2Match ? p2Match[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
+    const p3 = p3Match ? p3Match[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
 
     let html = '';
-    if (items.length) {
-      html = items.map((c, i) => editableCommentCard(c, 'serious', 'q' + i)).join('');
-    }
+    if (p1.length) { html += '<div class="comment-section-title">📖 経験・具体化型</div>' + p1.map((c,i) => editableCommentCard(c,'serious','q1'+i)).join(''); }
+    if (p2.length) { html += '<div class="comment-section-title">🔍 深掘り・別視点型</div>' + p2.map((c,i) => editableCommentCard(c,'humor','q2'+i)).join(''); }
+    if (p3.length) { html += '<div class="comment-section-title">💡 価値言語化・エモ型</div>' + p3.map((c,i) => editableCommentCard(c,'serious','q3'+i)).join(''); }
+
+    const total = p1.length + p2.length + p3.length;
     document.getElementById('quote-results').innerHTML = html;
-    document.getElementById('quote-status').textContent = `${items.length}件生成完了！`;
+    document.getElementById('quote-status').textContent = `${total}件生成完了！`;
     document.getElementById('quote-status').className = 'success';
   } catch (e) {
     document.getElementById('quote-status').textContent = `エラー: ${e.message}`;
