@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ポスト作成 - まりも</title>
+  <title>まりも ツール</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -11,350 +11,470 @@
       background: #0f1117;
       color: #e7e9ea;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       padding: 16px;
     }
 
     /* パスワード画面 */
     #lock-screen {
-      width: 100%;
-      max-width: 360px;
-      text-align: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh;
     }
     #lock-screen h1 { font-size: 1.4rem; margin-bottom: 24px; color: #1d9bf0; }
     #lock-screen input {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid #333;
-      background: #1e2732;
-      color: #e7e9ea;
-      font-size: 1rem;
-      text-align: center;
-      margin-bottom: 12px;
+      width: 100%; max-width: 320px; padding: 14px; border-radius: 12px;
+      border: 1px solid #333; background: #1e2732; color: #e7e9ea;
+      font-size: 1rem; text-align: center; margin-bottom: 12px;
     }
     #lock-screen button {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      border: none;
-      background: #1d9bf0;
-      color: #fff;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
+      width: 100%; max-width: 320px; padding: 14px; border-radius: 12px;
+      border: none; background: #1d9bf0; color: #fff; font-size: 1rem; font-weight: bold; cursor: pointer;
     }
     #lock-error { color: #f4212e; margin-top: 10px; font-size: 0.9rem; }
 
-    /* メイン画面 */
-    #app {
-      display: none;
-      width: 100%;
-      max-width: 480px;
+    /* タブナビ */
+    #app { display: none; max-width: 520px; margin: 0 auto; }
+    .nav-tabs {
+      display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 12px;
     }
-    h2 { font-size: 1.2rem; margin-bottom: 16px; color: #1d9bf0; text-align: center; }
+    .nav-tab {
+      padding: 8px 18px; border-radius: 20px; border: 1px solid #333;
+      background: #1a1a1a; color: #888; font-size: 14px; cursor: pointer;
+    }
+    .nav-tab.active { background: #1d9bf0; border-color: #1d9bf0; color: #fff; }
 
+    /* ポスト作成タブ */
+    #tab-post { display: block; }
+    h2 { font-size: 1.2rem; margin-bottom: 16px; color: #1d9bf0; text-align: center; }
     .section { margin-bottom: 16px; }
     label { font-size: 0.85rem; color: #71767b; display: block; margin-bottom: 6px; }
-
     select, textarea {
-      width: 100%;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid #333;
-      background: #1e2732;
-      color: #e7e9ea;
-      font-size: 0.95rem;
+      width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #333;
+      background: #1e2732; color: #e7e9ea; font-size: 0.95rem;
     }
     select { height: 48px; }
-    textarea { min-height: 160px; resize: vertical; line-height: 1.6; }
-
-    .char-count {
-      text-align: right;
-      font-size: 0.8rem;
-      margin-top: 4px;
-      color: #71767b;
-    }
+    textarea { min-height: 120px; resize: vertical; line-height: 1.6; }
+    .char-count { text-align: right; font-size: 0.8rem; margin-top: 4px; color: #71767b; }
     .char-count.over { color: #f4212e; }
-
-    .btn-generate {
-      width: 100%;
-      padding: 16px;
-      border-radius: 12px;
-      border: none;
-      background: #1d9bf0;
-      color: #fff;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      margin-bottom: 12px;
+    .btn-primary {
+      width: 100%; padding: 16px; border-radius: 12px; border: none;
+      background: #1d9bf0; color: #fff; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 12px;
     }
-    .btn-generate:disabled { background: #333; color: #71767b; cursor: not-allowed; }
-
-    .btn-copy {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid #1d9bf0;
-      background: transparent;
-      color: #1d9bf0;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      margin-bottom: 12px;
+    .btn-primary:disabled { background: #333; color: #71767b; cursor: not-allowed; }
+    .btn-outline {
+      width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #1d9bf0;
+      background: transparent; color: #1d9bf0; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 12px;
     }
-    .btn-copy:disabled { border-color: #333; color: #71767b; cursor: not-allowed; }
-
-    .btn-regenerate {
-      width: 100%;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid #333;
-      background: transparent;
-      color: #71767b;
-      font-size: 0.9rem;
-      cursor: pointer;
+    .btn-outline:disabled { border-color: #333; color: #71767b; cursor: not-allowed; }
+    .btn-sub {
+      width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #333;
+      background: transparent; color: #71767b; font-size: 0.9rem; cursor: pointer;
     }
-
-    #status { text-align: center; font-size: 0.85rem; color: #71767b; margin-top: 8px; min-height: 20px; }
-    #status.error { color: #f4212e; }
-    #status.success { color: #00ba7c; }
-
+    #post-status { text-align: center; font-size: 0.85rem; color: #71767b; margin-top: 8px; min-height: 20px; }
+    #post-status.error { color: #f4212e; }
+    #post-status.success { color: #00ba7c; }
     .spinner {
-      display: inline-block;
-      width: 16px; height: 16px;
-      border: 2px solid #fff;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
+      display: inline-block; width: 16px; height: 16px; border: 2px solid #fff;
+      border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite;
+      vertical-align: middle; margin-right: 6px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* 設定 */
     .settings-toggle {
-      text-align: center;
-      margin-top: 16px;
-      font-size: 0.8rem;
-      color: #71767b;
-      cursor: pointer;
-      text-decoration: underline;
+      text-align: center; margin-top: 16px; font-size: 0.8rem; color: #71767b; cursor: pointer; text-decoration: underline;
     }
     #settings-panel {
-      display: none;
-      margin-top: 12px;
-      padding: 12px;
-      border: 1px solid #333;
-      border-radius: 12px;
+      display: none; margin-top: 12px; padding: 12px; border: 1px solid #333; border-radius: 12px;
     }
     #settings-panel input {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #333;
-      background: #0f1117;
-      color: #e7e9ea;
-      font-size: 0.85rem;
-      font-family: monospace;
-      margin-top: 6px;
+      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333;
+      background: #0f1117; color: #e7e9ea; font-size: 0.85rem; font-family: monospace; margin-top: 6px;
     }
     .btn-save-key {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      background: #333;
-      color: #e7e9ea;
-      font-size: 0.85rem;
-      cursor: pointer;
-      margin-top: 8px;
+      width: 100%; padding: 10px; border-radius: 8px; border: none;
+      background: #333; color: #e7e9ea; font-size: 0.85rem; cursor: pointer; margin-top: 8px;
     }
+
+    /* 承認タブ */
+    #tab-approve { display: none; }
+    .approve-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .approve-header h2 { margin-bottom: 0; }
+    .stats-text { font-size: 12px; color: #555; }
+    .sub-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+    .sub-tab {
+      padding: 6px 14px; border-radius: 16px; border: 1px solid #333;
+      background: #1a1a1a; color: #666; font-size: 13px; cursor: pointer;
+    }
+    .sub-tab.active { background: #1d9bf0; border-color: #1d9bf0; color: #fff; }
+
+    .draft-card {
+      background: #1a1a1a; border: 1px solid #222; border-radius: 14px;
+      padding: 14px; margin-bottom: 10px;
+    }
+    .draft-card.approved { border-color: #00c853; }
+    .draft-card.posted { opacity: 0.5; }
+    .draft-meta { font-size: 11px; color: #555; margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px;
+    }
+    .badge-pending { background: #222; color: #666; }
+    .badge-approved { background: #00c85322; color: #00c853; }
+    .badge-posted { background: #1a1a1a; color: #444; }
+    .draft-text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
+    .draft-edit {
+      width: 100%; background: #111; color: #eee; border: 1px solid #333; border-radius: 8px;
+      padding: 10px; font-size: 14px; line-height: 1.6; margin-top: 10px; resize: vertical;
+      min-height: 100px; display: none; font-family: inherit;
+    }
+    .card-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .ca-btn {
+      padding: 6px 14px; border-radius: 14px; border: none; font-size: 13px; cursor: pointer;
+    }
+    .ca-approve { background: #00c853; color: #fff; }
+    .ca-unapprove { background: #333; color: #aaa; }
+    .ca-edit { background: #222; color: #888; border: 1px solid #333; }
+    .empty-msg { text-align: center; padding: 32px; color: #444; font-size: 14px; }
+    .loading-msg { text-align: center; padding: 32px; color: #555; }
+
+    .save-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: #111; border-top: 1px solid #222;
+      padding: 12px 16px; display: none; justify-content: space-between; align-items: center;
+    }
+    .save-bar.visible { display: flex; }
+    .save-bar span { font-size: 13px; color: #888; }
+    .btn-save-all {
+      background: #00c853; color: #fff; padding: 10px 22px; border-radius: 20px;
+      border: none; font-size: 14px; cursor: pointer; font-weight: bold;
+    }
+    .gh-token-area { margin-bottom: 14px; }
+    .gh-token-area input {
+      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333;
+      background: #111; color: #eee; font-size: 13px; font-family: monospace; margin-top: 4px;
+    }
+    .gh-token-area button {
+      margin-top: 6px; padding: 8px 16px; border-radius: 8px; border: none;
+      background: #333; color: #eee; font-size: 13px; cursor: pointer;
+    }
+    .toast {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      background: #222; color: #fff; padding: 10px 20px; border-radius: 20px;
+      font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999;
+    }
+    .toast.show { opacity: 1; }
+    .pb80 { height: 80px; }
   </style>
 </head>
 <body>
 
 <!-- パスワード画面 -->
 <div id="lock-screen">
-  <h1>🔒 ポスト作成</h1>
+  <h1>🔒 まりも ツール</h1>
   <input type="password" id="password-input" placeholder="パスワードを入力" />
   <button onclick="unlock()">ログイン</button>
   <div id="lock-error"></div>
 </div>
 
-<!-- メイン画面 -->
+<!-- メイン -->
 <div id="app">
-  <h2>✍️ ポスト作成</h2>
-
-  <div class="section">
-    <label>テーマ（任意）</label>
-    <select id="theme">
-      <option value="">ランダム生成</option>
-      <option value="共感">共感系（あるある）</option>
-      <option value="失敗談">失敗談・ストーリー</option>
-      <option value="グダ消し">グダ消し（不安を消す）</option>
-      <option value="行動喚起">行動喚起（今やれ）</option>
-      <option value="問題提起">問題提起（なぜ稼げないか）</option>
-      <option value="解決策">解決策（AI副業の方法）</option>
-      <option value="ユーモア">ユーモア・興奮系</option>
-    </select>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="switchNav('post')">✍️ ポスト作成</div>
+    <div class="nav-tab" onclick="switchNav('approve')">✅ 投稿承認</div>
   </div>
 
-  <div class="section">
-    <label>メモ・キーワード（任意）</label>
-    <textarea id="memo" placeholder="例：子供の習い事、月5万、コピペ..." rows="3"></textarea>
+  <!-- ポスト作成 -->
+  <div id="tab-post">
+    <h2>✍️ ポスト作成</h2>
+    <div class="section">
+      <label>テーマ（任意）</label>
+      <select id="theme">
+        <option value="">ランダム生成</option>
+        <option value="共感">共感系（あるある）</option>
+        <option value="失敗談">失敗談・ストーリー</option>
+        <option value="グダ消し">グダ消し（不安を消す）</option>
+        <option value="行動喚起">行動喚起（今やれ）</option>
+        <option value="問題提起">問題提起（なぜ稼げないか）</option>
+        <option value="解決策">解決策（AI副業の方法）</option>
+        <option value="ユーモア">ユーモア・興奮系</option>
+      </select>
+    </div>
+    <div class="section">
+      <label>メモ・キーワード（任意）</label>
+      <textarea id="memo" placeholder="例：子供の習い事、月5万、コピペ..." rows="3"></textarea>
+    </div>
+    <button class="btn-primary" id="btn-generate" onclick="generate()">AIでポストを生成</button>
+    <div class="section">
+      <label>生成されたポスト</label>
+      <textarea id="output" placeholder="ここに生成されます..." oninput="updateCount()"></textarea>
+      <div class="char-count" id="char-count">0 / 140</div>
+    </div>
+    <button class="btn-outline" id="btn-copy" onclick="copyText()" disabled>コピー</button>
+    <button class="btn-sub" onclick="generate()">もう一度生成</button>
+    <div id="post-status"></div>
+    <div class="settings-toggle" onclick="toggleSettings()">⚙️ API設定</div>
+    <div id="settings-panel">
+      <label>Anthropic API Key</label>
+      <input type="password" id="api-key-input" placeholder="sk-ant-..." />
+      <button class="btn-save-key" onclick="saveApiKey()">保存</button>
+    </div>
   </div>
 
-  <button class="btn-generate" id="btn-generate" onclick="generate()">
-    AIでポストを生成
-  </button>
+  <!-- 投稿承認 -->
+  <div id="tab-approve">
+    <div class="approve-header">
+      <h2>✅ 投稿承認</h2>
+      <div class="stats-text" id="stats-bar">-</div>
+    </div>
 
-  <div class="section">
-    <label>生成されたポスト</label>
-    <textarea id="output" placeholder="ここに生成されます..." oninput="updateCount()"></textarea>
-    <div class="char-count" id="char-count">0 / 140</div>
-  </div>
+    <div class="gh-token-area" id="gh-token-area">
+      <label style="font-size:12px;color:#555;">GitHub Token（初回のみ）</label>
+      <input type="password" id="gh-token-input" placeholder="ghp_..." />
+      <button onclick="saveGhToken()">保存して読み込む</button>
+    </div>
 
-  <button class="btn-copy" id="btn-copy" onclick="copyText()" disabled>コピー</button>
-  <button class="btn-regenerate" onclick="generate()">もう一度生成</button>
+    <div class="sub-tabs">
+      <div class="sub-tab active" onclick="switchSubTab('pending')">未承認</div>
+      <div class="sub-tab" onclick="switchSubTab('approved')">承認済</div>
+      <div class="sub-tab" onclick="switchSubTab('posted')">投稿済</div>
+    </div>
 
-  <div id="status"></div>
-
-  <div class="settings-toggle" onclick="toggleSettings()">⚙️ API設定</div>
-  <div id="settings-panel">
-    <label>Anthropic API Key</label>
-    <input type="password" id="api-key-input" placeholder="sk-ant-..." />
-    <button class="btn-save-key" onclick="saveApiKey()">保存</button>
+    <div id="draft-list"><div class="loading-msg">GitHubトークンを入力してください</div></div>
+    <div class="pb80"></div>
   </div>
 </div>
 
-<script>
-  const PASSWORD = "marimo2026";
+<div class="save-bar" id="save-bar">
+  <span id="save-bar-text">変更あり</span>
+  <button class="btn-save-all" onclick="saveAll()">保存して確定</button>
+</div>
 
-  const SYSTEM_PROMPT = `あなたはXのポスト作成の専門家です。以下のキャラクター設定に従ってポストを生成してください。
+<div class="toast" id="toast"></div>
+
+<script>
+const PASSWORD = "marimo2026";
+const OWNER = "12256384a-bot";
+const REPO = "threads-auto-post";
+const FILE_PATH = "drafts.json";
+
+const SYSTEM_PROMPT = `あなたはThreadsのポスト作成の専門家です。以下のキャラクター設定に従ってポストを生成してください。
 
 【キャラクター】
 - 名前: まりも
 - 年齢・職業: 35歳・会社員（営業）
 - 家族: 妻と子供2人、住宅ローンあり、手取り20万
 - ストーリー: 3年間副業で0円 → AIで月5万〜10万の安定収益化
-- コンセプト: 知識・実績・商品ゼロからAIとコピペで月5万〜24万稼ぐ方法
+- 一人称: 俺
 
 【絶対に守るべきルール】
-✅ 140文字以内（厳守）
-✅ 具体的な数字を1個以上含める（月◯万、時給◯円など）
+✅ 500文字以内
+✅ 一人称は「俺」
 ✅ 体験談か失敗談を含める
-✅ グダ（不安）を1つ消す
+✅ 文章のリズムは自然な会話体で。短文を細切れにしすぎない
+❌ 「〜んだよ。」など独り言のような語尾はNG
 ❌ ハッシュタグは絶対に入れない
-❌ 詐欺的・誇張した表現はNG
-❌ ノウハウだけ・抽象的な表現はNG
+❌ 「誰でも稼げる」などの断言はNG
 
 【出力】
 投稿文のみ。説明・ラベル・文字数などは一切付けない。`;
 
-  function unlock() {
-    const input = document.getElementById('password-input').value;
-    if (input === PASSWORD) {
-      document.getElementById('lock-screen').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      // 保存済みAPIキーを読み込む
-      const saved = localStorage.getItem('anthropic_api_key');
-      if (saved) document.getElementById('api-key-input').value = saved;
-    } else {
-      document.getElementById('lock-error').textContent = 'パスワードが違います';
+// ---- 認証 ----
+function unlock() {
+  if (document.getElementById('password-input').value === PASSWORD) {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    const saved = localStorage.getItem('anthropic_api_key');
+    if (saved) document.getElementById('api-key-input').value = saved;
+    const ghToken = localStorage.getItem('gh_token');
+    if (ghToken) {
+      document.getElementById('gh-token-input').value = ghToken;
+      document.getElementById('gh-token-area').style.display = 'none';
     }
+  } else {
+    document.getElementById('lock-error').textContent = 'パスワードが違います';
   }
+}
+document.getElementById('password-input').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
 
-  document.getElementById('password-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') unlock();
+// ---- タブ切替 ----
+function switchNav(tab) {
+  document.querySelectorAll('.nav-tab').forEach((t, i) => t.classList.toggle('active', ['post','approve'][i] === tab));
+  document.getElementById('tab-post').style.display = tab === 'post' ? 'block' : 'none';
+  document.getElementById('tab-approve').style.display = tab === 'approve' ? 'block' : 'none';
+  if (tab === 'approve' && localStorage.getItem('gh_token') && drafts.length === 0) loadDrafts();
+}
+
+// ---- ポスト作成 ----
+function getApiKey() { return localStorage.getItem('anthropic_api_key') || ''; }
+function saveApiKey() {
+  localStorage.setItem('anthropic_api_key', document.getElementById('api-key-input').value.trim());
+  setPostStatus('APIキーを保存しました', 'success');
+}
+function toggleSettings() {
+  const p = document.getElementById('settings-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+function updateCount() {
+  const text = document.getElementById('output').value;
+  const el = document.getElementById('char-count');
+  el.textContent = `${text.length} / 140`;
+  el.className = text.length > 140 ? 'char-count over' : 'char-count';
+  document.getElementById('btn-copy').disabled = text.length === 0;
+}
+function copyText() {
+  navigator.clipboard.writeText(document.getElementById('output').value).then(() => {
+    setPostStatus('コピーしました！', 'success');
   });
-
-  function getApiKey() {
-    return localStorage.getItem('anthropic_api_key') || '';
+}
+function setPostStatus(msg, type = '') {
+  const el = document.getElementById('post-status');
+  el.innerHTML = msg; el.className = type;
+}
+async function generate() {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    setPostStatus('⚙️ API設定からAPIキーを入力してください', 'error');
+    document.getElementById('settings-panel').style.display = 'block';
+    return;
   }
+  const theme = document.getElementById('theme').value;
+  const memo = document.getElementById('memo').value.trim();
+  const btn = document.getElementById('btn-generate');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>生成中...';
+  setPostStatus(''); document.getElementById('output').value = '';
+  document.getElementById('btn-copy').disabled = true; updateCount();
 
-  function saveApiKey() {
-    const key = document.getElementById('api-key-input').value.trim();
-    localStorage.setItem('anthropic_api_key', key);
-    setStatus('APIキーを保存しました', 'success');
-  }
+  let userPrompt = 'Threadsのポストを1件生成してください。';
+  if (theme) userPrompt += `\nテーマ: ${theme}系のポストにしてください。`;
+  if (memo) userPrompt += `\nキーワード・メモ: ${memo}`;
 
-  function toggleSettings() {
-    const panel = document.getElementById('settings-panel');
-    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-  }
-
-  function updateCount() {
-    const text = document.getElementById('output').value;
-    const count = text.length;
-    const el = document.getElementById('char-count');
-    el.textContent = `${count} / 140`;
-    el.className = count > 140 ? 'char-count over' : 'char-count';
-    document.getElementById('btn-copy').disabled = count === 0;
-  }
-
-  function copyText() {
-    const text = document.getElementById('output').value;
-    navigator.clipboard.writeText(text).then(() => {
-      setStatus('コピーしました！Xアプリに貼り付けてください', 'success');
+  try {
+    const { default: Anthropic } = await import('https://esm.sh/@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+    const message = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001', max_tokens: 512,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userPrompt }]
     });
+    const text = message.content[0].text.trim();
+    document.getElementById('output').value = text;
+    updateCount(); setPostStatus('生成完了！', 'success');
+  } catch (e) {
+    setPostStatus(`エラー: ${e.message}`, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = 'AIでポストを生成';
   }
+}
 
-  function setStatus(msg, type = '') {
-    const el = document.getElementById('status');
-    el.innerHTML = msg;
-    el.className = type;
+// ---- 投稿承認 ----
+let drafts = [], sha = '', currentSubTab = 'pending', hasChanges = false;
+
+function saveGhToken() {
+  const token = document.getElementById('gh-token-input').value.trim();
+  if (!token) return;
+  localStorage.setItem('gh_token', token);
+  document.getElementById('gh-token-area').style.display = 'none';
+  loadDrafts();
+}
+
+async function loadDrafts() {
+  document.getElementById('draft-list').innerHTML = '<div class="loading-msg">読み込み中...</div>';
+  const token = localStorage.getItem('gh_token');
+  if (!token) return;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE_PATH}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' }
+    });
+    const data = await res.json();
+    sha = data.sha;
+    drafts = JSON.parse(atob(data.content.replace(/\n/g, '')));
+    renderDrafts(); updateStats();
+  } catch (e) {
+    document.getElementById('draft-list').innerHTML = '<div class="loading-msg">読み込みに失敗しました</div>';
   }
+}
 
-  async function generate() {
-    const apiKey = getApiKey();
-    if (!apiKey) {
-      setStatus('⚙️ API設定からAPIキーを入力してください', 'error');
-      document.getElementById('settings-panel').style.display = 'block';
-      return;
-    }
+function updateStats() {
+  const p = drafts.filter(d => d.status === 'pending').length;
+  const a = drafts.filter(d => d.status === 'approved').length;
+  const posted = drafts.filter(d => d.status === 'posted').length;
+  document.getElementById('stats-bar').textContent = `未承認${p} / 承認済${a} / 投稿済${posted}`;
+}
 
-    const theme = document.getElementById('theme').value;
-    const memo = document.getElementById('memo').value.trim();
-    const btn = document.getElementById('btn-generate');
+function switchSubTab(tab) {
+  currentSubTab = tab;
+  document.querySelectorAll('.sub-tab').forEach((t, i) => t.classList.toggle('active', ['pending','approved','posted'][i] === tab));
+  renderDrafts();
+}
 
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span>生成中...';
-    setStatus('');
-    document.getElementById('output').value = '';
-    document.getElementById('btn-copy').disabled = true;
-    updateCount();
+function renderDrafts() {
+  const list = document.getElementById('draft-list');
+  const filtered = drafts.filter(d => d.status === currentSubTab).slice().reverse();
+  if (filtered.length === 0) { list.innerHTML = '<div class="empty-msg">該当する投稿はありません</div>'; return; }
+  list.innerHTML = filtered.map(d => `
+    <div class="draft-card ${d.status}" id="card-${d.id}">
+      <div class="draft-meta">
+        <span>#${d.id} <span class="badge badge-${d.status}">${{pending:'未承認',approved:'承認済',posted:'投稿済'}[d.status]}</span></span>
+        <span>${d.created_at ? d.created_at.slice(0,10) : ''}</span>
+      </div>
+      <div class="draft-text" id="dtext-${d.id}">${esc(d.text)}</div>
+      <textarea class="draft-edit" id="dedit-${d.id}">${esc(d.text)}</textarea>
+      <div class="card-actions">
+        ${d.status === 'pending' ? `<button class="ca-btn ca-approve" onclick="approve(${d.id})">承認</button>` : ''}
+        ${d.status === 'approved' ? `<button class="ca-btn ca-unapprove" onclick="unapprove(${d.id})">取消</button>` : ''}
+        ${d.status !== 'posted' ? `<button class="ca-btn ca-edit" id="ebtn-${d.id}" onclick="toggleEdit(${d.id})">編集</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
 
-    let userPrompt = 'Xのポストを1件生成してください。';
-    if (theme) userPrompt += `\nテーマ: ${theme}系のポストにしてください。`;
-    if (memo) userPrompt += `\nキーワード・メモ: ${memo}`;
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    try {
-      const { default: Anthropic } = await import('https://esm.sh/@anthropic-ai/sdk');
-      const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-
-      const message = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 256,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userPrompt }]
-      });
-
-      const text = message.content[0].text.trim();
-      document.getElementById('output').value = text;
-      updateCount();
-      setStatus('生成完了！', 'success');
-
-    } catch (e) {
-      setStatus(`エラー: ${e.name} - ${e.message}`, 'error');
-      console.error(e);
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = 'AIでポストを生成';
-    }
+function approve(id) {
+  const d = drafts.find(x => x.id === id);
+  if (d) { d.status = 'approved'; markChanged(); renderDrafts(); updateStats(); }
+}
+function unapprove(id) {
+  const d = drafts.find(x => x.id === id);
+  if (d) { d.status = 'pending'; markChanged(); renderDrafts(); updateStats(); }
+}
+function toggleEdit(id) {
+  const textEl = document.getElementById(`dtext-${id}`);
+  const editEl = document.getElementById(`dedit-${id}`);
+  const btnEl = document.getElementById(`ebtn-${id}`);
+  const isEditing = editEl.style.display === 'block';
+  if (isEditing) {
+    const d = drafts.find(x => x.id === id);
+    const newText = editEl.value.trim();
+    if (d && newText !== d.text) { d.text = newText; textEl.innerHTML = esc(newText); markChanged(); }
+    editEl.style.display = 'none'; textEl.style.display = 'block'; btnEl.textContent = '編集';
+  } else {
+    editEl.style.display = 'block'; textEl.style.display = 'none'; btnEl.textContent = '保存';
   }
+}
+function markChanged() {
+  hasChanges = true;
+  document.getElementById('save-bar').classList.add('visible');
+  document.getElementById('save-bar-text').textContent = `承認済み ${drafts.filter(d=>d.status==='approved').length}件`;
+}
+async function saveAll() {
+  const token = localStorage.getItem('gh_token');
+  if (!token) return;
+  try {
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(drafts, null, 2))));
+    const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE_PATH}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'chore: 投稿を承認', content, sha })
+    });
+    if (res.ok) {
+      const data = await res.json(); sha = data.content.sha;
+      hasChanges = false; document.getElementById('save-bar').classList.remove('visible');
+      showToast('保存しました！');
+    } else { showToast('保存に失敗しました'); }
+  } catch (e) { showToast('エラーが発生しました'); }
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
 </script>
 </body>
 </html>
