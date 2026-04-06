@@ -160,6 +160,28 @@
     }
     .toast.show { opacity: 1; }
     .pb80 { height: 80px; }
+
+    /* コメント作成 */
+    #comment-status { text-align: center; font-size: 0.85rem; color: #71767b; margin: 8px 0; min-height: 20px; }
+    #comment-status.error { color: #f4212e; }
+    .comment-section-title {
+      font-size: 13px; color: #555; margin: 16px 0 8px; padding-bottom: 4px;
+      border-bottom: 1px solid #222;
+    }
+    .comment-card {
+      background: #1a1a1a; border: 1px solid #222; border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 8px; position: relative;
+    }
+    .comment-card.humor { border-left: 3px solid #f59e0b; }
+    .comment-card.serious { border-left: 3px solid #1d9bf0; }
+    .comment-text { font-size: 14px; line-height: 1.6; color: #e7e9ea; white-space: pre-wrap; }
+    .comment-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+    .comment-len { font-size: 11px; color: #555; }
+    .btn-copy-comment {
+      padding: 4px 12px; border-radius: 12px; border: 1px solid #333;
+      background: transparent; color: #888; font-size: 12px; cursor: pointer;
+    }
+    .btn-copy-comment:active { background: #333; }
   </style>
 </head>
 <body>
@@ -176,6 +198,7 @@
 <div id="app">
   <div class="nav-tabs">
     <div class="nav-tab active" onclick="switchNav('post')">✍️ ポスト作成</div>
+    <div class="nav-tab" onclick="switchNav('comment')">💬 コメント作成</div>
     <div class="nav-tab" onclick="switchNav('approve')">✅ 投稿承認</div>
   </div>
 
@@ -214,6 +237,18 @@
       <input type="password" id="api-key-input" placeholder="sk-ant-..." />
       <button class="btn-save-key" onclick="saveApiKey()">保存</button>
     </div>
+  </div>
+
+  <!-- コメント作成 -->
+  <div id="tab-comment" style="display:none;">
+    <h2>💬 コメント作成</h2>
+    <div class="section">
+      <label>コメントしたい投稿を貼り付け</label>
+      <textarea id="target-post" placeholder="相手の投稿文をここに貼り付けてください..." rows="5"></textarea>
+    </div>
+    <button class="btn-primary" id="btn-comment" onclick="generateComments()">コメントを生成</button>
+    <div id="comment-status"></div>
+    <div id="comment-results"></div>
   </div>
 
   <!-- 投稿承認 -->
@@ -294,8 +329,9 @@ document.getElementById('password-input').addEventListener('keydown', e => { if 
 
 // ---- タブ切替 ----
 function switchNav(tab) {
-  document.querySelectorAll('.nav-tab').forEach((t, i) => t.classList.toggle('active', ['post','approve'][i] === tab));
+  document.querySelectorAll('.nav-tab').forEach((t, i) => t.classList.toggle('active', ['post','comment','approve'][i] === tab));
   document.getElementById('tab-post').style.display = tab === 'post' ? 'block' : 'none';
+  document.getElementById('tab-comment').style.display = tab === 'comment' ? 'block' : 'none';
   document.getElementById('tab-approve').style.display = tab === 'approve' ? 'block' : 'none';
   if (tab === 'approve' && localStorage.getItem('gh_token') && drafts.length === 0) loadDrafts();
 }
@@ -360,6 +396,99 @@ async function generate() {
   } finally {
     btn.disabled = false; btn.innerHTML = 'AIでポストを生成';
   }
+}
+
+// ---- コメント作成 ----
+async function generateComments() {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    document.getElementById('comment-status').textContent = '⚙️ ポスト作成タブのAPI設定からAPIキーを入力してください';
+    document.getElementById('comment-status').className = 'error';
+    return;
+  }
+  const targetPost = document.getElementById('target-post').value.trim();
+  if (!targetPost) {
+    document.getElementById('comment-status').textContent = '投稿文を入力してください';
+    document.getElementById('comment-status').className = 'error';
+    return;
+  }
+  const btn = document.getElementById('btn-comment');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>生成中...';
+  document.getElementById('comment-status').textContent = '';
+  document.getElementById('comment-results').innerHTML = '';
+
+  const prompt = `以下のXの投稿に対するコメントを6件生成してください。
+
+【対象投稿】
+${targetPost}
+
+【コメント作成のルール】
+- まりも（35歳・会社員・副業でAI活用）として自然にコメントする
+- 一人称は「俺」
+- 相手の投稿内容に具体的に触れる（「いいですね」だけはNG）
+- 自分の体験・意見を一言添える
+- 40〜80文字が理想。長すぎない
+- 質問を入れると返信率が上がるので、できれば1つ入れる
+- 相手への敬意を忘れない自然なトーン
+
+【出力形式】
+以下の形式で出力してください：
+
+HUMOR
+（ユーモアあり3件を「---」で区切る）
+
+SERIOUS
+（ユーモアなし3件を「---」で区切る）`;
+
+  try {
+    const { default: Anthropic } = await import('https://esm.sh/@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+    const message = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001', max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const raw = message.content[0].text.trim();
+    const humorMatch = raw.match(/HUMOR\s*([\s\S]*?)(?=SERIOUS|$)/);
+    const seriousMatch = raw.match(/SERIOUS\s*([\s\S]*?)$/);
+
+    const humorItems = humorMatch ? humorMatch[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
+    const seriousItems = seriousMatch ? seriousMatch[1].trim().split('---').map(s => s.trim()).filter(Boolean) : [];
+
+    let html = '';
+    if (humorItems.length) {
+      html += '<div class="comment-section-title">😄 ユーモアあり</div>';
+      html += humorItems.map((c, i) => commentCard(c, 'humor', i)).join('');
+    }
+    if (seriousItems.length) {
+      html += '<div class="comment-section-title">💬 ユーモアなし</div>';
+      html += seriousItems.map((c, i) => commentCard(c, 'serious', i + 10)).join('');
+    }
+    document.getElementById('comment-results').innerHTML = html;
+    document.getElementById('comment-status').textContent = '生成完了！';
+    document.getElementById('comment-status').className = 'success';
+  } catch (e) {
+    document.getElementById('comment-status').textContent = `エラー: ${e.message}`;
+    document.getElementById('comment-status').className = 'error';
+  } finally {
+    btn.disabled = false; btn.innerHTML = 'コメントを生成';
+  }
+}
+
+function commentCard(text, type, idx) {
+  return `
+    <div class="comment-card ${type}">
+      <div class="comment-text" id="ctext-${idx}">${esc(text)}</div>
+      <div class="comment-footer">
+        <span class="comment-len">${text.length}文字</span>
+        <button class="btn-copy-comment" onclick="copyComment(${idx})">コピー</button>
+      </div>
+    </div>`;
+}
+
+function copyComment(idx) {
+  const el = document.getElementById(`ctext-${idx}`);
+  navigator.clipboard.writeText(el.textContent.trim()).then(() => showToast('コピーしました！'));
 }
 
 // ---- 投稿承認 ----
