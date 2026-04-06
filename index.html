@@ -215,6 +215,7 @@
     <div class="nav-tab active" onclick="switchNav('post')">✍️ ポスト作成</div>
     <div class="nav-tab" onclick="switchNav('comment')">💬 コメント</div>
     <div class="nav-tab" onclick="switchNav('reply')">↩️ 返信</div>
+    <div class="nav-tab" onclick="switchNav('quote')">🔁 引用リプ</div>
     <div class="nav-tab" onclick="switchNav('approve')">✅ 承認</div>
   </div>
 
@@ -276,6 +277,18 @@
     <button class="btn-primary" id="btn-reply" onclick="generateReplies()">返信を生成</button>
     <div id="reply-status"></div>
     <div id="reply-results"></div>
+  </div>
+
+  <!-- 引用リプ作成 -->
+  <div id="tab-quote" style="display:none;">
+    <h2>🔁 引用リプ作成</h2>
+    <div class="section">
+      <label>引用したい相手のポスト</label>
+      <textarea id="quote-post" placeholder="引用したいポストをここに貼り付けてください..." rows="5"></textarea>
+    </div>
+    <button class="btn-primary" id="btn-quote" onclick="generateQuotes()">引用リプを生成</button>
+    <div id="quote-status"></div>
+    <div id="quote-results"></div>
   </div>
 
   <!-- 投稿承認 -->
@@ -359,10 +372,11 @@ document.getElementById('password-input').addEventListener('keydown', e => { if 
 
 // ---- タブ切替 ----
 function switchNav(tab) {
-  document.querySelectorAll('.nav-tab').forEach((t, i) => t.classList.toggle('active', ['post','comment','reply','approve'][i] === tab));
+  document.querySelectorAll('.nav-tab').forEach((t, i) => t.classList.toggle('active', ['post','comment','reply','quote','approve'][i] === tab));
   document.getElementById('tab-post').style.display = tab === 'post' ? 'block' : 'none';
   document.getElementById('tab-comment').style.display = tab === 'comment' ? 'block' : 'none';
   document.getElementById('tab-reply').style.display = tab === 'reply' ? 'block' : 'none';
+  document.getElementById('tab-quote').style.display = tab === 'quote' ? 'block' : 'none';
   document.getElementById('tab-approve').style.display = tab === 'approve' ? 'block' : 'none';
   if (tab === 'approve' && localStorage.getItem('gh_token') && drafts.length === 0) loadDrafts();
 }
@@ -665,6 +679,69 @@ SERIOUS
     document.getElementById('reply-status').className = 'error';
   } finally {
     btn.disabled = false; btn.innerHTML = '返信を生成';
+  }
+}
+
+// ---- 引用リプ作成 ----
+async function generateQuotes() {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    document.getElementById('quote-status').textContent = '⚙️ API設定からAPIキーを入力してください';
+    document.getElementById('quote-status').className = 'error';
+    return;
+  }
+  const quotePost = document.getElementById('quote-post').value.trim();
+  if (!quotePost) {
+    document.getElementById('quote-status').textContent = '引用するポストを入力してください';
+    document.getElementById('quote-status').className = 'error';
+    return;
+  }
+  const btn = document.getElementById('btn-quote');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>生成中...';
+  document.getElementById('quote-status').textContent = '';
+  document.getElementById('quote-results').innerHTML = '';
+
+  const prompt = `まりも（35歳・会社員営業・副業でAI活用・一人称は俺）として、以下のポストへの引用リプ文を5件生成してください。
+
+【引用するポスト】
+${quotePost}
+
+【引用リプで重要なこと】
+- 相手のポストを「引用」して自分の意見・体験・価値観を加える
+- 単なる同意（「わかります」「その通りです」）だけで終わらない
+- 自分の体験談・具体例を一言添えることで信頼感を出す
+- 相手の主張を否定せず、自分の視点でさらに深掘りする
+- フォロワーが「なるほど」「この人おもしろい」と感じる内容にする
+- 140文字以内（厳守）
+- ハッシュタグは入れない
+- 「俺も〜」「俺の場合〜」など自分事として語る
+- 相手を立てつつ、自分のキャラクターも出す
+
+【出力形式】
+5件を「---」で区切って出力。ラベルや説明は一切付けない。`;
+
+  try {
+    const { default: Anthropic } = await import('https://esm.sh/@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+    const message = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001', max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const raw = message.content[0].text.trim();
+    const items = raw.split('---').map(s => s.trim()).filter(Boolean).slice(0, 5);
+
+    let html = '';
+    if (items.length) {
+      html = items.map((c, i) => editableCommentCard(c, 'serious', 'q' + i)).join('');
+    }
+    document.getElementById('quote-results').innerHTML = html;
+    document.getElementById('quote-status').textContent = `${items.length}件生成完了！`;
+    document.getElementById('quote-status').className = 'success';
+  } catch (e) {
+    document.getElementById('quote-status').textContent = `エラー: ${e.message}`;
+    document.getElementById('quote-status').className = 'error';
+  } finally {
+    btn.disabled = false; btn.innerHTML = '引用リプを生成';
   }
 }
 
