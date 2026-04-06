@@ -356,14 +356,47 @@ function renderPosts(posts) {
   list.innerHTML = posts.map((p, i) => {
     const over = p.length > 140;
     return `
-      <div class="post-card">
-        <div class="post-card-text">${esc(p)}</div>
+      <div class="post-card" id="pcard-${i}">
+        <div class="post-card-text" id="ptext-${i}">${esc(p)}</div>
+        <textarea class="draft-edit" id="pedit-${i}" style="display:none">${esc(p)}</textarea>
         <div class="post-card-footer">
-          <span class="post-card-len ${over ? 'over' : 'ok'}">${p.length} / 140${over ? ' ⚠️' : ''}</span>
-          <button class="btn-copy-post" onclick="copyPost(${i})">コピー</button>
+          <span class="post-card-len ${over ? 'over' : 'ok'}" id="plen-${i}">${p.length} / 140${over ? ' ⚠️' : ''}</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-copy-post" id="pebtn-${i}" onclick="togglePostEdit(${i})">編集</button>
+            <button class="btn-copy-post" onclick="copyPost(${i})">コピー</button>
+          </div>
         </div>
       </div>`;
   }).join('');
+}
+
+function togglePostEdit(i) {
+  const textEl = document.getElementById(`ptext-${i}`);
+  const editEl = document.getElementById(`pedit-${i}`);
+  const btnEl = document.getElementById(`pebtn-${i}`);
+  const lenEl = document.getElementById(`plen-${i}`);
+  const isEditing = editEl.style.display === 'block';
+  if (isEditing) {
+    const newText = editEl.value.trim();
+    _posts[i] = newText;
+    textEl.innerHTML = esc(newText);
+    const over = newText.length > 140;
+    lenEl.textContent = `${newText.length} / 140${over ? ' ⚠️' : ''}`;
+    lenEl.className = `post-card-len ${over ? 'over' : 'ok'}`;
+    editEl.style.display = 'none';
+    textEl.style.display = 'block';
+    btnEl.textContent = '編集';
+  } else {
+    editEl.style.display = 'block';
+    textEl.style.display = 'none';
+    btnEl.textContent = '保存';
+    editEl.oninput = () => {
+      const len = editEl.value.length;
+      const over = len > 140;
+      lenEl.textContent = `${len} / 140${over ? ' ⚠️' : ''}`;
+      lenEl.className = `post-card-len ${over ? 'over' : 'ok'}`;
+    };
+  }
 }
 
 let _posts = [];
