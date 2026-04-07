@@ -131,6 +131,7 @@
     .ca-approve { background: #00c853; color: #fff; }
     .ca-unapprove { background: #333; color: #aaa; }
     .ca-edit { background: #222; color: #888; border: 1px solid #333; }
+    .ca-delete { background: #222; color: #ff4444; border: 1px solid #ff444433; }
     .empty-msg { text-align: center; padding: 32px; color: #444; font-size: 14px; }
     .loading-msg { text-align: center; padding: 32px; color: #555; }
 
@@ -838,6 +839,7 @@ function renderDrafts() {
         ${d.status === 'pending' ? `<button class="ca-btn ca-approve" onclick="approve(${d.id})">承認</button>` : ''}
         ${d.status === 'approved' ? `<button class="ca-btn ca-unapprove" onclick="unapprove(${d.id})">取消</button>` : ''}
         ${d.status !== 'posted' ? `<button class="ca-btn ca-edit" id="ebtn-${d.id}" onclick="toggleEdit(${d.id})">編集</button>` : ''}
+        ${d.status !== 'posted' ? `<button class="ca-btn ca-delete" onclick="deleteDraft(${d.id})">削除</button>` : ''}
       </div>
     </div>
   `).join('');
@@ -852,6 +854,11 @@ function approve(id) {
 function unapprove(id) {
   const d = drafts.find(x => x.id === id);
   if (d) { d.status = 'pending'; markChanged(); renderDrafts(); updateStats(); }
+}
+function deleteDraft(id) {
+  if (!confirm('この投稿を削除しますか？')) return;
+  drafts = drafts.filter(x => x.id !== id);
+  markChanged(); renderDrafts(); updateStats();
 }
 function toggleEdit(id) {
   const textEl = document.getElementById(`dtext-${id}`);
