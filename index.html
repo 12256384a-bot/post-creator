@@ -445,7 +445,7 @@ function resetKeywords() {
 }
 
 document.getElementById('kw-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') addKeyword();
+  if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); addKeyword(); }
 });
 
 const GEMINI_API_KEY = "AIzaSyDCXyDPVj2s1q1-PudtEQGIrJafctsAMzk";
