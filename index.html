@@ -198,6 +198,31 @@
       background: transparent; color: #888; font-size: 12px; cursor: pointer;
     }
     .btn-copy-comment:active { background: #333; }
+
+    /* キーワード一覧 */
+    .kw-section { margin-bottom: 16px; }
+    .kw-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .kw-header label { font-size: 0.85rem; color: #71767b; }
+    .kw-header span { font-size: 12px; color: #555; cursor: pointer; text-decoration: underline; }
+    .kw-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; max-height: 160px; overflow-y: auto; }
+    .kw-tag {
+      padding: 5px 12px; border-radius: 20px; border: 1px solid #333;
+      background: #1a1a1a; color: #888; font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; gap: 4px; transition: background 0.15s;
+    }
+    .kw-tag:active { background: #1d9bf022; border-color: #1d9bf0; color: #1d9bf0; }
+    .kw-tag .kw-del { color: #444; font-size: 11px; line-height: 1; margin-left: 2px; }
+    .kw-tag .kw-del:hover { color: #f4212e; }
+    .kw-add-row { display: flex; gap: 6px; }
+    .kw-add-input {
+      flex: 1; padding: 8px 12px; border-radius: 20px; border: 1px solid #333;
+      background: #1a1a1a; color: #eee; font-size: 13px;
+    }
+    .kw-add-input:focus { outline: none; border-color: #555; }
+    .kw-add-btn {
+      padding: 8px 16px; border-radius: 20px; border: none;
+      background: #333; color: #eee; font-size: 13px; cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -234,8 +259,19 @@
         <option value="E">E｜プロフィール自然誘導（100〜150字）</option>
       </select>
     </div>
+    <div class="kw-section">
+      <div class="kw-header">
+        <label>キーワード一覧（タップで追加）</label>
+        <span onclick="resetKeywords()">リセット</span>
+      </div>
+      <div class="kw-tags" id="kw-tags"></div>
+      <div class="kw-add-row">
+        <input class="kw-add-input" id="kw-input" placeholder="キーワードを手動追加..." />
+        <button class="kw-add-btn" onclick="addKeyword()">追加</button>
+      </div>
+    </div>
     <div class="section">
-      <label>メモ・キーワード（任意）</label>
+      <label>メモ・キーワード（タップで選択 or 手動入力）</label>
       <textarea id="memo" placeholder="例：子供の習い事、月5万、コピペ..." rows="3"></textarea>
     </div>
     <button class="btn-primary" id="btn-generate" onclick="generate()">AIでポストを生成</button>
@@ -327,6 +363,91 @@ const OWNER = "12256384a-bot";
 const REPO = "threads-auto-post";
 const FILE_PATH = "drafts.json";
 
+// ---- キーワード一覧 ----
+const DEFAULT_KEYWORDS = [
+  // 体験・ストーリー系
+  "3年間0円だった","副業で0円","最初の1円","初月5万","月5〜10万安定",
+  "22時帰宅","満員電車","住宅ローン","子供の習い事","妻に話したら",
+  "家計簿を消した","ボーナスが消えた","節約疲れた","外食できない","安いものばかり選ぶ",
+  // AI・副業スキル系
+  "AIとコピペ","ChatGPT","仕組み化","自動化","コピペで回す",
+  "29分だけ","朝5時台","スキマ時間","知識ゼロ","実績ゼロ",
+  "テンプレ作成","デジタルコンテンツ","note販売","SNS発信","ファン化",
+  // 感情・葛藤系
+  "正直ビビった","なんかモヤった","テンション上がった","追い詰められた","焦った",
+  "情けなかった","恥ずかしかった","泣きそうになった","やめようと思った","続かなかった",
+  // 逆張り・気づき系
+  "頑張らない方が稼げた","努力の方向が違った","設計の問題","仕組みの問題","ノウハウより先に",
+  "シンプルが正解","複雑にしてたのは自分","コツコツする場所が違う","時間を売らない","仕組みにコツコツ",
+  // 検索ワード系
+  "副業 バレない","副業 確定申告","副業 在宅","副業 時間がない","副業 続かない",
+  "AI副業","副業 初心者","副業 会社員","副業 スマホだけ","副業 月5万",
+  // 比較・選択系
+  "給料より早い","昇給を待つより","残業するより","転職より","節約より稼ぐ",
+  "時給300円","低単価","高単価","仕組みで回す","体力で殴らない",
+  // 家族・日常系
+  "妻が笑顔になった","子供に買ってあげた","ローンが怖くなくなった","会社だけに依存しない","精神的に楽になった",
+  "帰宅後パソコン開かない","寝る前の30分","電車の中で","子どもが寝た後","休日に稼ぐ",
+  // 行動喚起系
+  "動いた人だけ","後回しにすると","チャンスは今","変わったきっかけ","やり方を変えた",
+  "結局やるかやらないか","0円から1円が一番難しい","まず1件","続けると変わる","仕組みを1個だけ",
+  // プロフィール誘導系
+  "プロフィールに書いてます","気になる人はプロフィール","詳しくはプロフィール","無料で公開中","リンクに置いてます"
+];
+
+let keywords = JSON.parse(localStorage.getItem('kw_list') || 'null') || [...DEFAULT_KEYWORDS];
+
+function saveKeywordsToStorage() {
+  localStorage.setItem('kw_list', JSON.stringify(keywords));
+}
+
+function renderKeywords() {
+  const container = document.getElementById('kw-tags');
+  container.innerHTML = keywords.map((kw, i) => `
+    <div class="kw-tag" onclick="selectKeyword('${kw.replace(/'/g,"\\'")}')">
+      <span>${kw}</span>
+      <span class="kw-del" onclick="event.stopPropagation();deleteKeyword(${i})">✕</span>
+    </div>
+  `).join('');
+}
+
+function selectKeyword(kw) {
+  const memo = document.getElementById('memo');
+  const current = memo.value.trim();
+  memo.value = current ? current + '、' + kw : kw;
+}
+
+function addKeyword() {
+  const input = document.getElementById('kw-input');
+  const val = input.value.trim();
+  if (!val) return;
+  if (!keywords.includes(val)) {
+    keywords.push(val);
+    saveKeywordsToStorage();
+    renderKeywords();
+  }
+  input.value = '';
+  showToast('追加しました');
+}
+
+function deleteKeyword(i) {
+  keywords.splice(i, 1);
+  saveKeywordsToStorage();
+  renderKeywords();
+}
+
+function resetKeywords() {
+  if (!confirm('キーワードをデフォルトに戻しますか？')) return;
+  keywords = [...DEFAULT_KEYWORDS];
+  saveKeywordsToStorage();
+  renderKeywords();
+  showToast('リセットしました');
+}
+
+document.getElementById('kw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addKeyword();
+});
+
 const GEMINI_API_KEY = "AIzaSyDCXyDPVj2s1q1-PudtEQGIrJafctsAMzk";
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent";
 
@@ -393,6 +514,7 @@ function unlock() {
   }
 }
 document.getElementById('password-input').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+renderKeywords();
 
 // ---- タブ切替 ----
 function switchNav(tab) {
