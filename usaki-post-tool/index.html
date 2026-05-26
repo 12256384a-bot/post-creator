@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>うさき 投稿作成ツール</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0b1220;
+      color: #e7edf7;
+      min-height: 100vh;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #0b1220f2;
+      border-bottom: 1px solid #1d2a3d;
+      padding: 14px 16px 10px;
+      backdrop-filter: blur(10px);
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .tab {
+      border: 1px solid #2a3a52;
+      color: #9eb2cc;
+      background: #101a2b;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tab.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #fff;
+    }
+    main {
+      width: min(960px, 100%);
+      margin: 0 auto;
+      padding: 18px 16px 40px;
+    }
+    section { display: none; }
+    section.active { display: block; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .panel {
+      border: 1px solid #1d2a3d;
+      background: #101a2b;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      color: #cfe1ff;
+    }
+    h3 {
+      margin: 16px 0 8px;
+      font-size: 14px;
+      color: #9eb2cc;
+    }
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      color: #9eb2cc;
+      font-size: 13px;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #2a3a52;
+      background: #0b1220;
+      color: #e7edf7;
+      border-radius: 8px;
+      padding: 11px 12px;
+      font: inherit;
+      line-height: 1.55;
+    }
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+    .short { min-height: 88px; }
+    .output { min-height: 280px; }
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    button {
+      border: 0;
+      background: #2563eb;
+      color: white;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: transparent;
+      color: #9eb2cc;
+      border: 1px solid #2a3a52;
+    }
+    button.warn {
+      background: transparent;
+      color: #fca5a5;
+      border: 1px solid #7f1d1d;
+    }
+    .hint {
+      color: #7f93ad;
+      font-size: 12px;
+      line-height: 1.6;
+      margin: 8px 0 0;
+    }
+    .pillbox {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .pill {
+      border: 1px solid #2a3a52;
+      color: #b8c7dc;
+      background: #0b1220;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      transform: translateX(-50%);
+      background: #17233a;
+      border: 1px solid #2a3a52;
+      color: #fff;
+      border-radius: 999px;
+      padding: 10px 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+    .toast.show { opacity: 1; }
+    .saved-item {
+      border: 1px solid #1d2a3d;
+      background: #0b1220;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 10px;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+    .meta {
+      color: #7f93ad;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+    @media (max-width: 760px) {
+      .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .metric-grid label {
+      margin: 0 0 4px;
+      font-size: 12px;
+    }
+    .metric-grid input {
+      padding: 8px 9px;
+    }
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+      color: #b8c7dc;
+      font-size: 13px;
+    }
+    .check-row input {
+      width: auto;
+    }
+    #lockScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .lock-card {
+      width: min(420px, 100%);
+      border: 1px solid #1d2a3d;
+      background: #101a2b;
+      border-radius: 8px;
+      padding: 18px;
+    }
+    .lock-card h1 {
+      margin-bottom: 14px;
+    }
+    #appShell.locked {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="lockScreen">
+    <div class="lock-card">
+      <h1>うさき 投稿作成ツール</h1>
+      <p class="hint">パスワードを入力してください。</p>
+      <input id="toolPassword" type="password" placeholder="パスワード" onkeydown="if(event.key==='Enter') unlockTool()" />
+      <div class="row">
+        <button onclick="unlockTool()">開く</button>
+      </div>
+      <p class="hint" id="lockMessage"></p>
+    </div>
+  </div>
+
+  <div id="appShell" class="locked">
+  <header>
+    <h1>うさき 投稿作成ツール</h1>
+    <div class="tabs">
+      <button class="tab active" onclick="openTab('daily')">毎日ポスト</button>
+      <button class="tab" onclick="openTab('scheduled')">21時投稿</button>
+      <button class="tab" onclick="openTab('comment')">コメント</button>
+      <button class="tab" onclick="openTab('quote')">引用リプ</button>
+      <button class="tab" onclick="openTab('reply')">返信</button>
+      <button class="tab" onclick="openTab('saved')">保存一覧</button>
+      <button class="tab" onclick="openTab('analytics')">反応記録</button>
+      <button class="tab" onclick="openTab('insights')">分析</button>
+      <button class="tab" onclick="openTab('settings')">設定</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="daily" class="active">
+      <div class="grid">
+        <div class="panel">
+          <h2>毎日ポスト作成</h2>
+          <label>今日のテーマ</label>
+          <select id="dailyTheme">
+            <option>ミックス</option>
+            <option>AI副業</option>
+            <option>note販売</option>
+            <option>アフィリエイト</option>
+            <option>看護師の働き方</option>
+            <option>子育てと副業</option>
+            <option>失敗談</option>
+            <option>保存系Tips</option>
+            <option>問いかけ</option>
+          </select>
+          <label>今日入れたい素材</label>
+          <textarea id="dailyMemo" class="short" oninput="buildDailyPrompt(false, true)" placeholder="例: フォロワー500人、note300部、夜勤なし、子どもの宿題、AIでタイトル修正"></textarea>
+          <div class="pillbox" id="dailyPills"></div>
+          <label>参考バズポスト（任意）</label>
+          <textarea id="buzzReference" oninput="buildDailyPrompt(false, true)" placeholder="他人のバズポストを貼る。文章はコピーせず、構造・読者心理・フックだけ分析します。"></textarea>
+          <div class="row">
+            <button onclick="buildDailyPrompt()">プロンプト作成</button>
+            <button onclick="buildDailyPrompt(true)">参考バズ込みで作成</button>
+            <button class="secondary" onclick="copyFrom('dailyPrompt')">コピー</button>
+          </div>
+          <p class="hint" id="dailyPromptStatus"></p>
+          <p class="hint">入力すると右側のプロンプトが自動更新されます。作ったプロンプトをこのチャットに貼ると、うさき用の10投稿を作れます。自動投稿はしません。</p>
+        </div>
+        <div class="panel">
+          <h2>AIへ渡すプロンプト</h2>
+          <textarea id="dailyPrompt" class="output"></textarea>
+          <label>完成した投稿案を貼り付けて保存</label>
+          <textarea id="dailyResult" class="short" placeholder="生成された10投稿をここに貼る"></textarea>
+          <div class="row">
+            <button onclick="saveEntry('daily', '毎日ポスト', 'dailyResult')">保存</button>
+            <button class="secondary" onclick="downloadMarkdown()">Markdown出力</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="scheduled">
+      <div class="grid">
+        <div class="panel">
+          <h2>21時に作った投稿案</h2>
+          <p class="hint">毎日21時の自動生成が保存した投稿案をここで見ます。表示されない時は、ブラウザの再読み込みをしてください。</p>
+          <div class="row">
+            <button onclick="loadScheduledPosts()">読み込み</button>
+            <button class="secondary" onclick="copyFrom('scheduledBody')">表示中をコピー</button>
+          </div>
+          <div id="scheduledList"></div>
+        </div>
+        <div class="panel">
+          <h2 id="scheduledTitle">投稿案</h2>
+          <textarea id="scheduledBody" class="output" placeholder="左の一覧から日付を選んでください"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section id="comment">
+      <div class="grid">
+        <div class="panel">
+          <h2>他人のポストへコメント</h2>
+          <label>相手のポスト</label>
+          <textarea id="commentTarget" placeholder="ここに相手のポストを貼る"></textarea>
+          <label>コメントの温度感</label>
+          <select id="commentTone">
+            <option>自然に共感</option>
+            <option>少しユーモア</option>
+            <option>学びを添える</option>
+            <option>看護師目線</option>
+            <option>父親目線</option>
+          </select>
+          <div class="row">
+            <button onclick="buildCommentPrompt()">プロンプト作成</button>
+            <button class="secondary" onclick="copyFrom('commentPrompt')">コピー</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>AIへ渡すプロンプト</h2>
+          <textarea id="commentPrompt" class="output"></textarea>
+          <label>完成コメントを保存</label>
+          <textarea id="commentResult" class="short"></textarea>
+          <button onclick="saveEntry('comment', 'コメント', 'commentResult')">保存</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="quote">
+      <div class="grid">
+        <div class="panel">
+          <h2>引用リプ作成</h2>
+          <label>引用したいポスト</label>
+          <textarea id="quoteTarget" placeholder="ここに引用したいポストを貼る"></textarea>
+          <label>引用リプの方向性</label>
+          <select id="quoteAngle">
+            <option>相手がリポストしたくなる形で立てる</option>
+            <option>共感して自分の経験を足す</option>
+            <option>少し別視点を足す</option>
+            <option>看護師/医療職目線で補足</option>
+            <option>副業初心者向けに噛み砕く</option>
+            <option>家族を守る視点に変換</option>
+          </select>
+          <div class="row">
+            <button onclick="buildQuotePrompt()">プロンプト作成</button>
+            <button class="secondary" onclick="copyFrom('quotePrompt')">コピー</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>AIへ渡すプロンプト</h2>
+          <textarea id="quotePrompt" class="output"></textarea>
+          <label>完成引用リプを保存</label>
+          <textarea id="quoteResult" class="short"></textarea>
+          <button onclick="saveEntry('quote', '引用リプ', 'quoteResult')">保存</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="reply">
+      <div class="grid">
+        <div class="panel">
+          <h2>返信作成</h2>
+          <label>自分の元ポスト</label>
+          <textarea id="replyOriginal" class="short" placeholder="自分の投稿文"></textarea>
+          <label>届いたコメント</label>
+          <textarea id="replyComment" class="short" placeholder="相手からのコメント"></textarea>
+          <label>返信の方向性</label>
+          <select id="replyTone">
+            <option>自然に感謝</option>
+            <option>会話を広げる</option>
+            <option>少し詳しく補足</option>
+            <option>相手に質問を返す</option>
+          </select>
+          <div class="row">
+            <button onclick="buildReplyPrompt()">プロンプト作成</button>
+            <button class="secondary" onclick="copyFrom('replyPrompt')">コピー</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>AIへ渡すプロンプト</h2>
+          <textarea id="replyPrompt" class="output"></textarea>
+          <label>完成返信を保存</label>
+          <textarea id="replyResult" class="short"></textarea>
+          <button onclick="saveEntry('reply', '返信', 'replyResult')">保存</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="saved">
+      <div class="panel">
+        <h2>保存一覧</h2>
+        <div class="row">
+          <button class="secondary" onclick="renderSaved()">再読み込み</button>
+          <button class="secondary" onclick="exportSaved()">JSON出力</button>
+          <button class="warn" onclick="clearSaved()">全削除</button>
+        </div>
+        <div id="savedList"></div>
+      </div>
+    </section>
+
+    <section id="analytics">
+      <div class="panel">
+        <h2>投稿反応を記録</h2>
+        <p class="hint">保存した投稿案ごとに、投稿済みチェックと反応を手入力します。最初はインプ・いいね・返信だけでも十分です。</p>
+        <div class="row">
+          <button class="secondary" onclick="renderAnalytics()">再読み込み</button>
+          <button class="secondary" onclick="exportAnalyticsCsv()">CSV出力</button>
+        </div>
+        <div id="analyticsList"></div>
+      </div>
+    </section>
+
+    <section id="insights">
+      <div class="panel">
+        <h2>反応分析</h2>
+        <p class="hint">反応記録に入れた数字から、平均値・上位投稿・弱い投稿・次回方針を自動でまとめます。</p>
+        <div class="row">
+          <button onclick="renderInsights()">分析する</button>
+          <button class="secondary" onclick="copyFrom('insightPrompt')">分析結果をコピー</button>
+        </div>
+        <div id="insightSummary"></div>
+        <h3>このチャットに貼る用</h3>
+        <textarea id="insightPrompt" class="output" placeholder="分析結果がここに出ます"></textarea>
+      </div>
+    </section>
+
+    <section id="settings">
+      <div class="panel">
+        <h2>うさき設定</h2>
+        <p class="hint">ここはプロンプトに毎回入る前提情報です。数字や方針が変わったらここを直してください。</p>
+        <label>プロフィール・文体設定</label>
+        <textarea id="profileContext" class="output"></textarea>
+        <div class="row">
+          <button onclick="saveSettings()">設定を保存</button>
+          <button class="secondary" onclick="resetSettings()">初期値に戻す</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  </div>
+
+  <script>
+    const TOOL_PASSWORD = "usaki500";
+
+    function unlockTool() {
+      const value = document.getElementById("toolPassword").value.trim();
+      if (value !== TOOL_PASSWORD) {
+        document.getElementById("lockMessage").textContent = "パスワードが違います。";
+        return;
+      }
+      localStorage.setItem("usaki_tool_unlocked", "yes");
+      document.getElementById("lockScreen").style.display = "none";
+      document.getElementById("appShell").classList.remove("locked");
+    }
+
+    const defaultProfile = `うさき｜限界ナースAI副業。
+男性。2児の父。小3の男の子と小1の女の子、1歳年下の妻と4人暮らし。住宅ローンあり。
+看護師。月5〜6回夜勤。2交代で夜勤は14時間拘束。
+難病とこれからも付き合っていく。今は調子がいいが、将来働けなくなる不安がある。
+ブログ4年失敗。AIを使ってnote累計300部。半自動アフィリエイトとnote販売で本業以外の収入柱を作っている。
+目的はフォロー増加、ファン化、教育。ファン化が進むまでは売り込みしない。
+口調はやさしく現実的。煽りすぎない。高額実績を盛らない。うさき本人の実績以外を本人実績にしない。
+箇条書きは原則「・」。絵文字は0〜2個。改行しすぎない。うさきは男性なので女性ナース前提にしない。
+看護師を否定せず、本業だけに頼らない選択肢を作る方向に着地させる。`;
+
+    const dailyMaterials = [
+      "フォロワー500人", "note販売300部", "ブログ4年失敗", "AI下書き",
+      "noteタイトル修正", "アフィリエイト導線", "小3息子", "小1娘",
+      "妻への感謝", "住宅ローン", "難病の将来不安", "本業だけに頼る怖さ",
+      "看護師資格の強さ", "子どもの宿題", "休日なのに休めない感覚"
+    ];
+
+    function $(id) { return document.getElementById(id); }
+
+    function openTab(id) {
+      document.querySelectorAll("section").forEach(s => s.classList.toggle("active", s.id === id));
+      document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.getAttribute("onclick").includes("'" + id + "'")));
+      if (id === "saved") renderSaved();
+      if (id === "analytics") renderAnalytics();
+      if (id === "insights") renderInsights();
+      if (id === "settings") loadSettings();
+      if (id === "scheduled") loadScheduledPosts();
+    }
+
+    function getProfile() {
+      return localStorage.getItem("usaki_profile_context") || defaultProfile;
+    }
+
+    function loadSettings() {
+      $("profileContext").value = getProfile();
+    }
+
+    function saveSettings() {
+      localStorage.setItem("usaki_profile_context", $("profileContext").value.trim() || defaultProfile);
+      toast("設定を保存しました");
+    }
+
+    function resetSettings() {
+      if (!confirm("初期設定に戻しますか？")) return;
+      localStorage.setItem("usaki_profile_context", defaultProfile);
+      loadSettings();
+      toast("初期設定に戻しました");
+    }
+
+    function addMemo(text) {
+      const el = $("dailyMemo");
+      el.value = el.value.trim() ? el.value.trim() + "、" + text : text;
+    }
+
+    function renderPills() {
+      $("dailyPills").innerHTML = dailyMaterials.map(t => `<button class="pill" onclick="addMemo('${t}')">${t}</button>`).join("");
+    }
+
+    function baseRules() {
+      return `【うさき設定】\n${getProfile()}\n\n【共通ルール】\n・他人の投稿をコピーしない\n・うさきのキャラを守る\n・売り込みしない\n・1投稿に絵文字0〜2個まで\n・箇条書きは原則「・」\n・改行しすぎない\n・重い内容は重くしすぎず、最後は小さな一歩に着地\n\n【AIっぽさを消すルール】\n・整いすぎた優等生文にしない\n・「大切なのは〜です」「ポイントは3つです」を多用しない\n・毎回きれいな結論で締めない\n・説明しすぎず、少し余白を残す\n・同じ文型を連続させない\n・一般論だけでなく、うさきの生活感や本音を1つ入れる\n・テンプレっぽい共感語「わかります」「大事ですよね」だけで始めない\n・不自然な丁寧語に寄せすぎない。うさき本人がXで話す自然な口調にする\n`;
+    }
+
+    const scheduledFallbackPosts = [
+      {
+        date: "2026-05-25",
+        file: "2026-05-25_usaki_posts.md",
+        theme: "副業失敗・医療職副業・看護師の働き方不安",
+        summary: "投稿10個生成",
+        text: `# うさき投稿案 2026-05-25
+
+## 今日調べたテーマ
+
+・副業 失敗 / ブログ失敗 / AI副業
+・看護師 転職 / 看護師副業 / AI
+・医療職副業 / 介護職給料 / AI副業
+
+## バズ投稿から見えた傾向
+
+・「ブログで失敗した人がAIを補助輪にする」切り口は共感されやすい
+・看護師×AI副業は大きな実績より、発信初期のリアルな挑戦記録が刺さる
+・医療/介護職向けは、月100万より「まず月1〜5万円が現実的」という警鐘が信頼されやすい
+・日常の違和感を3行メモしてAIに渡す、という小さな作業が保存されやすい
+・高額情報商材への注意喚起、過剰な夢を見せない発信が伸びやすい
+
+## うさきに反映する方針
+
+・「失敗を資産に変える」「現実的な月1〜5万円」「看護師を続ける/辞めるの選択肢」を軸にする
+・高額商材や過剰煽りに距離を置き、うさきの信頼感を強める
+・ブログ4年失敗とnote300部は、成功自慢ではなく“遠回りした人の言葉”として使う
+・看護/介護の待遇問題は重くしすぎず、収入柱づくりに着地させる
+
+## 投稿10個
+
+### 1
+カテゴリ: 失敗談
+目的: 信頼形成
+使用した日常素材: ブログ4年失敗、note販売300部
+狙い: 失敗からの変化を伝える
+想定読者: ブログや副業で挫折した人
+
+投稿文:
+ブログを4年やって失敗した経験、今なら無駄じゃなかったと思える。読まれない記事、売れない導線、続かない作業。全部が今のnote作りに活きてる。AIを使ってnote累計300部まで来たけど、近道というより「失敗の再利用」だった。
+
+### 2
+カテゴリ: 保存系Tips
+目的: 保存
+使用した日常素材: AI下書き
+狙い: 今日できる具体策を出す
+想定読者: ネタがない副業初心者
+
+投稿文:
+副業ネタが出ない時は、日常の違和感を3行だけメモする。
+・今日しんどかったこと
+・誰にも言えなかった本音
+・昔の自分に教えたいこと
+これをAIに渡すと、投稿にもnoteにも変えやすい。ネタは机の上より、生活の中に落ちてる。
+
+### 3
+カテゴリ: 問題提起
+目的: 世界観形成
+使用した日常素材: 看護師資格の強さ、いつまで働けるか問題
+狙い: 看護師一本のリスクを言語化する
+想定読者: 医療職で将来不安がある人
+
+投稿文:
+看護師資格は強い。これは本当にそう。でも「仕事がある」と「今の働き方を続けられる」は別問題。夜勤、体力、家族、病気。どれかが変わるだけで働き方は揺れる。だから副業は逃げじゃなく、選択肢を増やす準備だと思ってる。
+
+### 4
+カテゴリ: 反論・逆張り
+目的: 教育
+使用した日常素材: 高額商材への距離感
+狙い: 信頼を作る
+想定読者: AI副業に怪しさを感じている人
+
+投稿文:
+AI副業で最初から高額教材を買う必要はないと思ってる。まずは無料のAIで投稿案を作る。自分の経験をメモする。300円でもいいから小さなnoteを出してみる。最初に必要なのは大金じゃなく、自分で1回流れを体験すること。
+
+### 5
+カテゴリ: 看護・介護制度への違和感
+目的: 問題提起
+使用した日常素材: 現場の使命感依存
+狙い: 現場職の共感を取る
+想定読者: 看護師・介護職
+
+投稿文:
+医療や介護の現場って、優しさと責任感で回ってる部分が大きい。もちろん大切な仕事。でも、その善意に頼りすぎる仕組みは限界があると思う。待遇や制度が追いつかないなら、自分でも収入の逃げ道を作る。きれいごとじゃなく現実として。
+
+### 6
+カテゴリ: 実践記録
+目的: ファン化
+使用した日常素材: noteタイトル修正、AI下書き
+狙い: 作業のリアルを見せる
+想定読者: noteを作りたい初心者
+
+投稿文:
+今日はnoteのタイトルを1つ直した。やったのは、AIに「このタイトルで誰の悩みが解決するか分かる？」と聞いただけ。返ってきた違和感を見て、言葉を少し変えた。派手な作業じゃない。でもこういう修正が、読まれる入口を作る。
+
+### 7
+カテゴリ: 初心者への手紙
+目的: 教育
+使用した日常素材: 体調が微妙な日
+狙い: 低負荷で始める空気を作る
+想定読者: 疲れて副業できない人
+
+投稿文:
+体調が微妙な日に、副業を頑張りすぎなくていい。僕はそういう日は「作る」じゃなく「残す」だけにしてる。思ったことをメモする、AIに投げる、タイトル案だけ出す。進んだ距離が1センチでも、ゼロの日よりは未来の自分が助かる。
+
+### 8
+カテゴリ: あるある
+目的: 日常接触
+使用した日常素材: 休日なのに休めない感覚
+狙い: 軽めの共感を作る
+想定読者: 子育て・仕事で疲れている人
+
+投稿文:
+休日なのに、全然休んだ気がしない日がある。家のこと、子どものこと、翌日の仕事の準備。そこに副業まで詰め込むと続かない。だから僕は「休日に一気にやる」をやめた。平日に15分だけ進める方が、意外と続く。☕️
+
+### 9
+カテゴリ: 問いかけ
+目的: 返信
+使用した日常素材: 本業だけに頼る怖さ
+狙い: 読者の不安を引き出す
+想定読者: 本業一本に不安がある人
+
+投稿文:
+本業だけに頼るのが怖いと感じた瞬間ってありますか？僕は、体調や家族の予定で働き方が変わるかもしれないと考えた時でした。副業は大きく稼ぐ前に、安心材料になる。月1万円でも別の入口があると、見える景色は変わると思う。
+
+### 10
+カテゴリ: 小さな宣言
+目的: フォロー増加
+使用した日常素材: 家族を守りたい気持ち、難病の将来不安
+狙い: アカウントの芯を伝える
+想定読者: 最近うさきを知った人
+
+投稿文:
+僕は難病とこれからも付き合っていく。今は調子がいいけど、ずっと同じ働き方ができる保証はない。だからAI、note、アフィリエイトで小さな収入柱を作ってる。家族を守るために、働ける今のうちから準備する。その過程を発信します。`
+      }
+    ];
+
+    function renderScheduledItems(items) {
+      const list = $("scheduledList");
+      if (!items.length) {
+        list.innerHTML = `<p class="hint">まだ保存された21時投稿案がありません。</p>`;
+        return;
+      }
+      list.innerHTML = items.map(item => `
+        <div class="saved-item">
+          <div class="meta">${escapeHtml(item.date)} / ${escapeHtml(item.theme || "テーマ未設定")}</div>
+          <div>${escapeHtml(item.summary || "")}</div>
+          <div class="row">
+            <button class="secondary" onclick="openScheduledFile('${item.file.replace(/'/g, "\\'")}','${item.date.replace(/'/g, "\\'")}')">開く</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function buildDailyPrompt(requireBuzz = false, quiet = false) {
+      const theme = $("dailyTheme").value;
+      const memo = $("dailyMemo").value.trim();
+      const buzz = $("buzzReference").value.trim();
+      if (requireBuzz && !buzz) {
+        $("dailyPromptStatus").textContent = "参考バズポスト欄に投稿を貼ってから押してください。";
+        if (!quiet) toast("参考バズポストが空です");
+        return;
+      }
+      const buzzSection = buzz
+        ? `\n\n【参考バズポスト】\n${buzz}\n\n【参考バズポストの扱い】\n以下だけを分析して使ってください。\n・冒頭フックの種類\n・読者の欲望\n・読者の不安\n・投稿構成\n・保存/返信/フォローにつながる理由\n\n【コピー回避の厳守ルール】\n・参考ポストの文章をそのまま使わない\n・同じ冒頭表現を使わない\n・同じ語尾、比喩、数字、体験談を使わない\n・言い換えただけの文章にしない\n・参考ポストの投稿者の実績や体験を、うさき本人の実績として扱わない\n・必ず、うさきの文脈（限界ナース、男性、2児の父、難病、ブログ4年失敗、note300部、AI副業、半自動アフィリ）に変換する\n・完成後に「どこをコピー回避したか」を短く説明する`
+        : "";
+      $("dailyPrompt").value = `${baseRules()}\n【依頼】\nうさきのX投稿を10個作ってください。\n\n【今日のテーマ】\n${theme}\n\n【今日入れたい素材】\n${memo || "おまかせ。ただし日常素材を偏らせない。"}${buzzSection}\n\n【出力形式】\nそれぞれに、カテゴリ、目的、使用した日常素材、狙い、想定読者、投稿文を付けてください。\n参考バズポストを入れた場合は、最後にコピー回避メモも付けてください。\n投稿文はXにそのまま貼れる形にしてください。`;
+      $("dailyPromptStatus").textContent = buzz
+        ? "参考バズポスト込みのプロンプトを作成しました。右側の出力欄をコピーして、このチャットに貼ってください。"
+        : "プロンプトを作成しました。右側の出力欄をコピーして、このチャットに貼ってください。";
+      if (!quiet) {
+        $("dailyPrompt").scrollIntoView({ behavior: "smooth", block: "center" });
+        $("dailyPrompt").focus();
+        toast("プロンプトを作成しました");
+      }
+    }
+
+    async function loadScheduledPosts() {
+      const list = $("scheduledList");
+      list.innerHTML = `<p class="hint">読み込み中...</p>`;
+      try {
+        const res = await fetch("drafts/index.json?ts=" + Date.now());
+        if (!res.ok) throw new Error("index.json がありません");
+        const items = await res.json();
+        renderScheduledItems(items.length ? items : scheduledFallbackPosts);
+      } catch (e) {
+        renderScheduledItems(scheduledFallbackPosts);
+      }
+    }
+
+    async function openScheduledFile(file, date) {
+      try {
+        const res = await fetch("drafts/" + file + "?ts=" + Date.now());
+        if (!res.ok) throw new Error("ファイルがありません");
+        const text = await res.text();
+        $("scheduledTitle").textContent = `${date} の投稿案`;
+        $("scheduledBody").value = text;
+        toast("読み込みました");
+      } catch (e) {
+        const fallback = scheduledFallbackPosts.find(item => item.file === file || item.date === date);
+        if (fallback) {
+          $("scheduledTitle").textContent = `${date} の投稿案`;
+          $("scheduledBody").value = fallback.text;
+          toast("読み込みました");
+        } else {
+          toast("読み込みに失敗しました");
+        }
+      }
+    }
+
+    function buildCommentPrompt() {
+      const target = $("commentTarget").value.trim();
+      const tone = $("commentTone").value;
+      $("commentPrompt").value = `${baseRules()}\n【依頼】\n以下の相手ポストに対して、うさきとして自然なコメントを10個作ってください。\n\n【相手ポスト】\n${target}\n\n【温度感】\n${tone}\n\n【ルール】\n・相手の投稿内容に具体的に触れる\n・定型文の「勉強になります」「参考になります」だけで終わらせない\n・40〜90文字くらい\n・攻撃、皮肉、マウントは禁止\n・看護師/父/AI副業の要素は必要な時だけ入れる\n・出力はコメント文のみ。「---」で区切る`;
+      toast("プロンプトを作成しました");
+    }
+
+    function buildQuotePrompt() {
+      const target = $("quoteTarget").value.trim();
+      const angle = $("quoteAngle").value;
+      $("quotePrompt").value = `${baseRules()}\n【依頼】\n以下のポストを引用リプする前提で、うさきとして引用文を8個作ってください。\n最重要目的は「相手が思わずリポストしたくなる引用リプ」にすることです。\n\n【引用元ポスト】\n${target}\n\n【方向性】\n${angle}\n\n【相手がリポストしたくなる引用リプの条件】\n・まず相手の主張や視点を立てる\n・相手の投稿の価値が上がる補足をする\n・「この引用、ありがたい」と相手が感じる内容にする\n・相手の読者にも役立つ一言を足す\n・うさきの経験は足してよいが、自分語りを主役にしすぎない\n・反論する場合も、否定ではなく別視点の補足にする\n・宣伝、誘導、マウント、上から目線は禁止\n\n【ルール】\n・引用元の文章をコピーしない\n・冒頭で自然に反応し、自分の経験や視点を足す\n・宣伝に見せない\n・80〜140文字くらい\n・出力は引用リプ文のみ。「---」で区切る`;
+      toast("プロンプトを作成しました");
+    }
+
+    function buildReplyPrompt() {
+      const original = $("replyOriginal").value.trim();
+      const comment = $("replyComment").value.trim();
+      const tone = $("replyTone").value;
+      $("replyPrompt").value = `${baseRules()}\n【依頼】\n以下の自分の元ポストと、届いたコメントに対して、うさきとして返信文を8個作ってください。\n\n【自分の元ポスト】\n${original}\n\n【届いたコメント】\n${comment}\n\n【返信の方向性】\n${tone}\n\n【ルール】\n・まず相手に自然に反応する\n・会話が続く余地を残す\n・押し売りや誘導をしない\n・30〜100文字くらい\n・出力は返信文のみ。「---」で区切る`;
+      toast("プロンプトを作成しました");
+    }
+
+    function copyFrom(id) {
+      const text = $(id).value;
+      if (!text.trim()) return toast("コピーする内容がありません");
+      navigator.clipboard.writeText(text).then(() => toast("コピーしました"));
+    }
+
+    function getSaved() {
+      return JSON.parse(localStorage.getItem("usaki_saved_items") || "[]");
+    }
+
+    function setSaved(items) {
+      localStorage.setItem("usaki_saved_items", JSON.stringify(items));
+    }
+
+    function saveEntry(type, label, sourceId) {
+      const text = $(sourceId).value.trim();
+      if (!text) return toast("保存する内容がありません");
+      const items = getSaved();
+      items.unshift({
+        id: Date.now(),
+        type,
+        label,
+        text,
+        created_at: new Date().toISOString()
+      });
+      setSaved(items);
+      $(sourceId).value = "";
+      toast("保存しました");
+    }
+
+    function getMetrics() {
+      return JSON.parse(localStorage.getItem("usaki_post_metrics") || "{}");
+    }
+
+    function setMetrics(metrics) {
+      localStorage.setItem("usaki_post_metrics", JSON.stringify(metrics));
+    }
+
+    function metricFor(id) {
+      const metrics = getMetrics();
+      return metrics[id] || {
+        posted: false,
+        impressions: "",
+        likes: "",
+        replies: "",
+        bookmarks: "",
+        follows: "",
+        memo: ""
+      };
+    }
+
+    function renderAnalytics() {
+      const items = getSaved().filter(item => item.type === "daily");
+      const list = $("analyticsList");
+      if (!items.length) {
+        list.innerHTML = `<p class="hint">まだ「毎日ポスト」として保存された投稿案がありません。まず完成した投稿案を保存してください。</p>`;
+        return;
+      }
+      list.innerHTML = items.map(item => {
+        const m = metricFor(item.id);
+        return `
+          <div class="saved-item">
+            <div class="meta">${item.label} / ${new Date(item.created_at).toLocaleString("ja-JP")}</div>
+            <div>${escapeHtml(item.text.slice(0, 240))}${item.text.length > 240 ? "..." : ""}</div>
+            <label class="check-row">
+              <input type="checkbox" ${m.posted ? "checked" : ""} onchange="updateMetric(${item.id}, 'posted', this.checked)" />
+              投稿済み
+            </label>
+            <div class="metric-grid">
+              <div><label>インプレッション</label><input type="number" value="${escapeAttr(m.impressions)}" oninput="updateMetric(${item.id}, 'impressions', this.value)" /></div>
+              <div><label>いいね</label><input type="number" value="${escapeAttr(m.likes)}" oninput="updateMetric(${item.id}, 'likes', this.value)" /></div>
+              <div><label>返信</label><input type="number" value="${escapeAttr(m.replies)}" oninput="updateMetric(${item.id}, 'replies', this.value)" /></div>
+              <div><label>保存</label><input type="number" value="${escapeAttr(m.bookmarks)}" oninput="updateMetric(${item.id}, 'bookmarks', this.value)" /></div>
+              <div><label>フォロー増加</label><input type="number" value="${escapeAttr(m.follows)}" oninput="updateMetric(${item.id}, 'follows', this.value)" /></div>
+            </div>
+            <label>メモ</label>
+            <textarea class="short" oninput="updateMetric(${item.id}, 'memo', this.value)" placeholder="例: 伸びた、微妙、返信が多い、保存されそう">${escapeHtml(m.memo || "")}</textarea>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function updateMetric(id, key, value) {
+      const metrics = getMetrics();
+      metrics[id] = metricFor(id);
+      metrics[id][key] = value;
+      metrics[id].updated_at = new Date().toISOString();
+      setMetrics(metrics);
+      toast("記録しました");
+    }
+
+    function exportAnalyticsCsv() {
+      const items = getSaved().filter(item => item.type === "daily");
+      const metrics = getMetrics();
+      const header = ["id","created_at","posted","impressions","likes","replies","bookmarks","follows","memo","text"];
+      const rows = items.map(item => {
+        const m = metrics[item.id] || {};
+        return [
+          item.id,
+          item.created_at,
+          m.posted ? "yes" : "no",
+          m.impressions || "",
+          m.likes || "",
+          m.replies || "",
+          m.bookmarks || "",
+          m.follows || "",
+          m.memo || "",
+          item.text || ""
+        ].map(csvCell).join(",");
+      });
+      const blob = new Blob([[header.join(","), ...rows].join("\n")], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `usaki_metrics_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function numberValue(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function getMetricRows() {
+      const metrics = getMetrics();
+      return getSaved()
+        .filter(item => item.type === "daily")
+        .map(item => ({ item, metric: metrics[item.id] || {} }))
+        .filter(row => row.metric.posted || row.metric.impressions || row.metric.likes || row.metric.replies || row.metric.bookmarks || row.metric.follows);
+    }
+
+    function scoreRow(row) {
+      const m = row.metric;
+      return numberValue(m.impressions) * 0.01
+        + numberValue(m.likes) * 2
+        + numberValue(m.replies) * 4
+        + numberValue(m.bookmarks) * 5
+        + numberValue(m.follows) * 10;
+    }
+
+    function avg(rows, key) {
+      if (!rows.length) return 0;
+      return Math.round(rows.reduce((sum, row) => sum + numberValue(row.metric[key]), 0) / rows.length);
+    }
+
+    function guessTags(text) {
+      const tags = [];
+      const checks = [
+        ["失敗談", /失敗|挫折|ブログ4年|うまくいかな/],
+        ["note", /note|タイトル|有料記事|300部/],
+        ["看護師", /看護|夜勤|医療|介護/],
+        ["家族", /妻|子ども|家族|住宅ローン|父/],
+        ["難病", /難病|体調|入院|働けなく/],
+        ["Tips", /・|手順|方法|チェック|メモ/],
+        ["問いかけ", /ですか？|ますか？|どうですか|ありますか/],
+        ["AI", /AI|プロンプト|ChatGPT|Claude/]
+      ];
+      checks.forEach(([tag, pattern]) => { if (pattern.test(text)) tags.push(tag); });
+      return tags.length ? tags : ["未分類"];
+    }
+
+    function tagStats(rows) {
+      const map = {};
+      rows.forEach(row => {
+        const tags = guessTags(row.item.text);
+        tags.forEach(tag => {
+          if (!map[tag]) map[tag] = { count: 0, score: 0, impressions: 0, likes: 0, replies: 0, bookmarks: 0, follows: 0 };
+          map[tag].count += 1;
+          map[tag].score += scoreRow(row);
+          map[tag].impressions += numberValue(row.metric.impressions);
+          map[tag].likes += numberValue(row.metric.likes);
+          map[tag].replies += numberValue(row.metric.replies);
+          map[tag].bookmarks += numberValue(row.metric.bookmarks);
+          map[tag].follows += numberValue(row.metric.follows);
+        });
+      });
+      return Object.entries(map)
+        .map(([tag, stat]) => ({ tag, ...stat, avgScore: Math.round(stat.score / stat.count) }))
+        .sort((a, b) => b.avgScore - a.avgScore);
+    }
+
+    function shortText(text) {
+      return String(text || "").replace(/\s+/g, " ").slice(0, 120);
+    }
+
+    function renderInsights() {
+      const rows = getMetricRows();
+      const box = $("insightSummary");
+      if (!rows.length) {
+        box.innerHTML = `<p class="hint">まだ分析できる反応記録がありません。反応記録タブで、投稿済みチェックか数字を入れてください。</p>`;
+        $("insightPrompt").value = "";
+        return;
+      }
+
+      const ranked = rows.slice().sort((a, b) => scoreRow(b) - scoreRow(a));
+      const top = ranked.slice(0, 3);
+      const bottom = ranked.slice(-3).reverse();
+      const tags = tagStats(rows);
+      const summary = {
+        count: rows.length,
+        impressions: avg(rows, "impressions"),
+        likes: avg(rows, "likes"),
+        replies: avg(rows, "replies"),
+        bookmarks: avg(rows, "bookmarks"),
+        follows: avg(rows, "follows")
+      };
+      const bestTags = tags.slice(0, 3);
+      const nextTips = [];
+      if (bestTags[0]) nextTips.push(`${bestTags[0].tag}系を次回も1〜2本入れる`);
+      if (summary.replies < 1) nextTips.push("返信狙いの問いかけ投稿を増やす");
+      if (summary.bookmarks < 1) nextTips.push("保存系Tipsを1本入れる");
+      if (summary.follows < 1) nextTips.push("プロフィールに自然につながる投稿を1本入れる");
+      if (!nextTips.length) nextTips.push("伸びた型を保ちつつ、日常素材をずらす");
+
+      box.innerHTML = `
+        <div class="saved-item">
+          <div class="meta">分析対象 ${summary.count}件</div>
+          平均インプ: ${summary.impressions}<br>
+          平均いいね: ${summary.likes}<br>
+          平均返信: ${summary.replies}<br>
+          平均保存: ${summary.bookmarks}<br>
+          平均フォロー増加: ${summary.follows}
+        </div>
+        <div class="saved-item">
+          <div class="meta">強いタグ</div>
+          ${bestTags.map(t => `${escapeHtml(t.tag)}: ${t.count}件 / 平均スコア ${t.avgScore}`).join("<br>")}
+        </div>
+        <div class="saved-item">
+          <div class="meta">反応が良かった投稿</div>
+          ${top.map(row => `スコア${Math.round(scoreRow(row))}: ${escapeHtml(shortText(row.item.text))}`).join("<br><br>")}
+        </div>
+        <div class="saved-item">
+          <div class="meta">反応が弱かった投稿</div>
+          ${bottom.map(row => `スコア${Math.round(scoreRow(row))}: ${escapeHtml(shortText(row.item.text))}`).join("<br><br>")}
+        </div>
+        <div class="saved-item">
+          <div class="meta">次回方針</div>
+          ${nextTips.map(t => `・${escapeHtml(t)}`).join("<br>")}
+        </div>
+      `;
+
+      $("insightPrompt").value = `うさき投稿の反応分析です。次回の投稿案作成に反映してください。
+
+分析対象: ${summary.count}件
+平均インプレッション: ${summary.impressions}
+平均いいね: ${summary.likes}
+平均返信: ${summary.replies}
+平均保存: ${summary.bookmarks}
+平均フォロー増加: ${summary.follows}
+
+強いタグ:
+${bestTags.map(t => `・${t.tag}: ${t.count}件 / 平均スコア ${t.avgScore}`).join("\n")}
+
+反応が良かった投稿:
+${top.map(row => `・スコア${Math.round(scoreRow(row))}: ${shortText(row.item.text)}`).join("\n")}
+
+反応が弱かった投稿:
+${bottom.map(row => `・スコア${Math.round(scoreRow(row))}: ${shortText(row.item.text)}`).join("\n")}
+
+次回方針:
+${nextTips.map(t => `・${t}`).join("\n")}
+
+この分析を踏まえて、コピーではなくうさきの文脈で投稿を作ってください。`;
+    }
+
+    function renderSaved() {
+      const items = getSaved();
+      $("savedList").innerHTML = items.length ? items.map(item => `
+        <div class="saved-item">
+          <div class="meta">${item.label} / ${new Date(item.created_at).toLocaleString("ja-JP")}</div>${escapeHtml(item.text)}
+        </div>
+      `).join("") : `<p class="hint">保存された投稿はまだありません。</p>`;
+    }
+
+    function exportSaved() {
+      const blob = new Blob([JSON.stringify(getSaved(), null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `usaki_saved_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadMarkdown() {
+      const text = $("dailyResult").value.trim() || $("dailyPrompt").value.trim();
+      if (!text) return toast("出力する内容がありません");
+      const md = `# うさき投稿案 ${new Date().toLocaleDateString("ja-JP")}\n\n${text}\n`;
+      const blob = new Blob([md], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `usaki_posts_${new Date().toISOString().slice(0,10)}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function clearSaved() {
+      if (!confirm("保存一覧を全て削除しますか？")) return;
+      setSaved([]);
+      renderSaved();
+      toast("削除しました");
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function escapeAttr(s) {
+      return String(s || "").replace(/"/g, "&quot;");
+    }
+
+    function csvCell(value) {
+      return `"${String(value || "").replace(/"/g, '""')}"`;
+    }
+
+    function toast(msg) {
+      const t = $("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 1800);
+    }
+
+    renderPills();
+    loadSettings();
+    if (localStorage.getItem("usaki_tool_unlocked") === "yes") {
+      document.getElementById("lockScreen").style.display = "none";
+      document.getElementById("appShell").classList.remove("locked");
+    }
+  </script>
+</body>
+</html>
